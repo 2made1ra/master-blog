@@ -1,0 +1,1607 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Многоуровневый инференс детекции</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Martian+Mono:wdth,wght@75..112.5,300..600&display=swap">
+<style>
+/* Layout: Cohere-style white editorial canvas cut by deep-green product bands.
+   One section = one thesis line + one live figure; mono STAR labels work as taxonomy chips. */
+:root{
+  --bg:#ffffff;
+  --card:#ffffff;
+  --stone:#eeece7;
+  --wash:#f6f5f1;
+  --fg:#17171c;
+  --fg-2:#55555f;
+  --fg-3:#7e7e8a;
+  --rule:#d9d9dd;
+  --band:#003c33;
+  --band-card:rgba(255,255,255,.055);
+  --band-rule:rgba(255,255,255,.17);
+  --band-ring:#0e463e;
+  --on-band:#ffffff;
+  --on-band-2:rgba(255,255,255,.78);
+  --on-band-3:rgba(255,255,255,.56);
+  --coral:#ff7759;
+  --coral-ink:#c4452a;
+  --coral-soft:#ffe7e0;
+  --mark-a:#1863dc;
+  --mark-b:#e4583c;
+  --mark-n:#a3a3ae;
+  --band-a:#5b8ff2;
+  --band-b:#e35c40;
+  --band-n:rgba(255,255,255,.6);
+  --link:#1863dc;
+  --focus:#4c6ee6;
+  --black:#000000;
+  --console:#17171c;
+  --console-2:#26272e;
+  --console-rule:rgba(255,255,255,.12);
+  --console-fg:#f4f4f2;
+  --console-fg-2:#a4a4ae;
+  --ring:var(--card);
+  --font-display:"Martian Mono","JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --font-body:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  --font-mono:"Martian Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --r-xs:4px; --r-sm:8px; --r-md:16px; --r-lg:22px; --r-pill:32px;
+  --ease:cubic-bezier(.2,.75,.25,1);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#111215; --card:#1b1c21; --stone:#18191d; --wash:#15161a;
+    --fg:#f2f2ef; --fg-2:#b4b4bd; --fg-3:#868692; --rule:#2c2d33;
+    --band:#00342c; --band-card:rgba(255,255,255,.05); --band-rule:rgba(255,255,255,.15); --band-ring:#0c3d35;
+    --coral-ink:#ff9a82; --coral-soft:#3a201a;
+    --mark-a:#5b8ff2; --mark-b:#e35c40; --mark-n:#6c6d79;
+    --link:#82a9ff; --focus:#7d96ff;
+    --console:#0b0c0f; --console-2:#1b1c22;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#111215; --card:#1b1c21; --stone:#18191d; --wash:#15161a;
+  --fg:#f2f2ef; --fg-2:#b4b4bd; --fg-3:#868692; --rule:#2c2d33;
+  --band:#00342c; --band-card:rgba(255,255,255,.05); --band-rule:rgba(255,255,255,.15); --band-ring:#0c3d35;
+  --coral-ink:#ff9a82; --coral-soft:#3a201a;
+  --mark-a:#5b8ff2; --mark-b:#e35c40; --mark-n:#6c6d79;
+  --link:#82a9ff; --focus:#7d96ff;
+  --console:#0b0c0f; --console-2:#1b1c22;
+  color-scheme:dark;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-snap-type:y proximity;scroll-behavior:smooth}
+body{background:var(--bg);color:var(--fg);font:400 17px/1.55 var(--font-body);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+h1,h2,h3,p,ol,ul,figure{margin:0}
+ol,ul{padding:0;list-style:none}
+a{color:var(--link);text-underline-offset:3px}
+:focus-visible{outline:2px solid var(--focus);outline-offset:3px;border-radius:4px}
+button{font:inherit}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.sprite{position:absolute;width:0;height:0;overflow:hidden}
+
+/* ---------- frame ---------- */
+.wrap{width:100%;max-width:1296px;margin-inline:auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+@media (min-width:720px){.wrap{padding-left:max(48px,env(safe-area-inset-left,0px));padding-right:max(48px,env(safe-area-inset-right,0px))}}
+.sec{position:relative;scroll-snap-align:start;min-height:100svh;display:flex;flex-direction:column;justify-content:center;padding-block:clamp(64px,10vh,120px)}
+.sec.hero{min-height:0;padding-block:clamp(28px,5vh,56px) clamp(48px,8vh,96px)}
+.band{background:var(--band);color:var(--on-band)}
+.stone{background:var(--stone)}
+.progress{position:fixed;inset:0 0 auto 0;padding-top:env(safe-area-inset-top,0px);z-index:50;pointer-events:none}
+.progress i{display:block;height:2px;background:var(--coral);transform-origin:0 50%;transform:scaleX(0)}
+
+.announce{background:var(--black);color:#fff;font:400 12.5px/1.45 var(--font-body);padding-block:9px}
+.announce .wrap{display:flex;justify-content:center;gap:6px 14px;flex-wrap:wrap;text-align:center}
+.announce a{color:#fff}
+
+/* ---------- type ---------- */
+.eyebrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font:500 12px/1.4 var(--font-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--fg-3)}
+.eyebrow .num{color:var(--fg)}
+.band .eyebrow{color:var(--on-band-3)}
+.band .eyebrow .num{color:var(--on-band)}
+.star{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:var(--r-sm);background:var(--coral);color:#17171c;font-weight:600;letter-spacing:0}
+.h1{font-family:var(--font-display);font-weight:400;font-stretch:87.5%;font-size:clamp(32px,4.8vw,72px);line-height:1.02;letter-spacing:-.045em;text-wrap:balance;max-width:21ch}
+.h2{font-family:var(--font-display);font-weight:400;font-stretch:87.5%;font-size:clamp(28px,4.2vw,60px);line-height:1.04;letter-spacing:-.04em;text-wrap:balance;max-width:20ch}
+.h3d{font-family:var(--font-display);font-weight:400;font-stretch:87.5%;font-size:clamp(22px,2.6vw,36px);line-height:1.1;letter-spacing:-.035em;text-wrap:balance}
+.lead{font-size:clamp(17px,1.45vw,20px);line-height:1.5;color:var(--fg-2);max-width:60ch;text-wrap:pretty}
+.band .lead{color:var(--on-band-2)}
+.sec-head{display:flex;flex-direction:column;gap:18px}
+.src{font:400 11px/1.45 var(--font-mono);letter-spacing:.02em;color:var(--fg-3)}
+.band .src{color:var(--on-band-3)}
+.illus{font:500 10.5px/1.3 var(--font-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--fg-3)}
+.band .illus{color:var(--on-band-3)}
+
+.chip{display:inline-flex;align-items:center;gap:6px;font:500 12px/1 var(--font-mono);letter-spacing:.02em;padding:7px 11px;border-radius:var(--r-pill);border:1px solid var(--rule);color:var(--fg-2);white-space:nowrap}
+.chip.ru{border-color:var(--coral);color:var(--coral-ink);background:var(--coral-soft)}
+.chip.new{border-color:var(--coral);color:var(--coral-ink);background:var(--coral-soft)}
+.chip.base{background:var(--fg);border-color:var(--fg);color:var(--bg)}
+.band .chip{border-color:var(--band-rule);color:var(--on-band-2)}
+
+/* ---------- hero ---------- */
+.topline{display:flex;justify-content:space-between;gap:8px 24px;flex-wrap:wrap;padding-bottom:14px;border-bottom:1px solid var(--rule)}
+.hero .h1{margin-top:clamp(36px,7vh,80px)}
+.hero-sub{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:24px 48px;align-items:start;margin-top:32px}
+.topic{display:flex;flex-direction:column;gap:12px}
+.forks{display:flex;flex-direction:column;gap:10px}
+.forks li{display:grid;grid-template-columns:118px minmax(0,1fr);gap:12px;align-items:baseline;padding-block:8px;border-top:1px solid var(--rule);font-size:14.5px;line-height:1.4;color:var(--fg-2)}
+.forks b{font:500 11.5px/1.4 var(--font-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--coral-ink)}
+.topic-ru{font-size:clamp(17px,1.45vw,21px);line-height:1.45;color:var(--fg-2);max-width:58ch;text-wrap:pretty}
+.topic-en{font:400 12.5px/1.6 var(--font-mono);color:var(--fg-3)}
+.media{margin-top:clamp(28px,4.5vh,52px);display:grid;grid-template-columns:minmax(0,1.78fr) minmax(0,1fr);border-radius:var(--r-lg);overflow:hidden;background:var(--console)}
+.legend-line{display:flex;flex-wrap:wrap;gap:8px 22px;margin-top:16px;font:400 12.5px/1.4 var(--font-mono);color:var(--fg-3)}
+.legend-line b{color:var(--fg);font-weight:600;margin-right:6px}
+
+.scene{position:relative;min-width:0;background:#0b1624}
+.scene svg{display:block;width:100%;height:auto}
+.scene .n-only{opacity:0;transition:opacity 1.4s ease}
+.scene.night .n-only{opacity:1}
+.scene .city{fill:#b7c4d0;transition:fill 1.4s ease}
+.scene.night .city{fill:#0b1a2b}
+.scene .ground{fill:#c9d1d8;transition:fill 1.4s ease}
+.scene.night .ground{fill:#0a131d}
+.scene .road{fill:#7f878f;transition:fill 1.4s ease}
+.scene.night .road{fill:#18212c}
+.scene .edge{fill:none;stroke:#f2f4f6;stroke-width:3;transition:stroke 1.4s ease}
+.scene.night .edge{stroke:#5d6a78}
+.scene .lane{fill:none;stroke:#f6f8fa;stroke-width:5;stroke-dasharray:26 30;animation:lane 1.1s linear infinite;transition:stroke 1.4s ease}
+.scene.night .lane{stroke:#8995a3}
+@keyframes lane{to{stroke-dashoffset:-56}}
+.scene .pole{fill:none;stroke:#5f6b77;stroke-width:5}
+.scene .lamp-head{fill:#e9eef2;transition:fill 1.4s}
+.scene.night .lamp-head{fill:#ffe2a3}
+.car .c-body{fill:#eef1f4;transition:fill 1.4s}
+.car .c-roof{fill:#dfe4e9;transition:fill 1.4s}
+.car .c-glass{fill:#4f6275;transition:fill 1.4s}
+.car .c-tail{fill:#c9372a;transition:fill 1.4s}
+.car .c-plate{fill:#f7f7f2;transition:fill 1.4s}
+.car .c-tire{fill:#1f252c}
+.car .c-shadow{fill:rgba(20,26,32,.28)}
+.car .c-glow{opacity:0;transition:opacity 1.4s}
+.scene.night .car .c-body{fill:#36414e}
+.scene.night .car .c-roof{fill:#2b343f}
+.scene.night .car .c-glass{fill:#121a23}
+.scene.night .car .c-tail{fill:#ff5c45}
+.scene.night .car .c-plate{fill:#8f99a4}
+.scene.night .car .c-glow{opacity:1}
+.carA{transition:transform .6s var(--ease)}
+.carB,.boxB{opacity:0;transition:opacity .6s ease}
+.carB.on,.boxB.on{opacity:1}
+.box .frame{fill:none;stroke:#2166ea;stroke-width:3.5;transition:stroke .3s}
+.scene.night .box .frame{stroke:#6f9dff}
+.box[data-d="P"] .frame{stroke-dasharray:12 8}
+.box .tagbg{fill:#2166ea;transition:fill .3s}
+.scene.night .box .tagbg{fill:#6f9dff}
+.box .tagtx{font:600 13px var(--font-mono);fill:#fff;letter-spacing:.02em}
+.scene.night .box .tagtx{fill:#0b0c0f}
+.scene .box.is-miss .frame{stroke:#ff5a3c}
+.scene .box.is-miss .tagbg{fill:#ff5a3c}
+.scene .box.is-miss .tagtx{fill:#0b0c0f}
+.boxA{transition:transform .28s ease-out}
+.miss{opacity:0;transform:translateY(6px);transition:opacity .3s,transform .3s}
+.miss.on{opacity:1;transform:none}
+.miss rect{fill:#ff5a3c}
+.miss text{font:600 15px var(--font-body);fill:#0b0c0f}
+.miss .sub{font:400 13px var(--font-body)}
+.hud-bg{fill:rgba(10,12,16,.62)}
+.hud-tx{font:500 13px var(--font-mono);fill:#fff;letter-spacing:.06em}
+.rec{fill:#ff5a3c}
+.hud-phase-bg{fill:#ffffff;transition:fill .6s}
+.scene.night .hud-phase-bg{fill:#0f2a4a}
+#hud-phase{fill:#17171c}
+.scene.night #hud-phase{fill:#ffffff}
+.hud-note{font:400 12px var(--font-body);fill:#fff}
+.paused .lane,.paused .b-anim,.paused .b-anim *{animation-play-state:paused!important}
+.no-tr,.no-tr *{transition:none!important}
+
+.console{min-width:0;background:var(--console);color:var(--console-fg);padding:22px;display:flex;flex-direction:column;gap:14px;font:400 12px/1.45 var(--font-mono);border-left:1px solid var(--console-rule)}
+.c-head{display:flex;justify-content:space-between;align-items:center;gap:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--console-fg-2)}
+.c-phase{border:1px solid var(--console-rule);border-radius:var(--r-pill);padding:4px 10px;color:var(--console-fg);transition:background .6s}
+.c-phase.is-night{background:#0f2a4a;border-color:#2a4d78}
+.c-label{display:flex;justify-content:space-between;color:var(--console-fg-2)}
+.c-uval{color:var(--console-fg);font-variant-numeric:tabular-nums}
+.c-track{position:relative;height:8px;border-radius:4px;background:var(--console-2);margin-top:9px}
+.c-track i{position:absolute;left:0;top:0;bottom:0;width:5%;border-radius:4px;background:#e9e9ee;transition:width .35s var(--ease)}
+.c-track b{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--console-fg-2)}
+.c-tl{left:50%}.c-th{left:80%}
+.c-ticks{position:relative;height:14px;margin-top:6px;color:var(--console-fg-2);font-size:10.5px}
+.c-ticks span{position:absolute;transform:translateX(-50%);white-space:nowrap}
+.c-ticks .c-tl{left:50%}.c-ticks .c-th{left:80%}
+.c-log{display:flex;flex-direction:column;gap:5px;flex:1;min-height:0}
+.c-log li{display:grid;grid-template-columns:40px 52px 24px minmax(0,1fr);gap:8px;align-items:center;color:var(--console-fg-2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.c-log li:last-child{color:var(--console-fg)}
+.c-log .why{overflow:hidden;text-overflow:ellipsis}
+.c-log .why.x{color:#ff8f78}
+.d{display:inline-grid;place-items:center;width:22px;height:18px;border-radius:4px;border:1px solid var(--console-rule);font-weight:600}
+.d[data-d="L"],.c-pill[data-d="L"]{background:var(--band-a);border-color:transparent;color:#0b0c0f}
+.d[data-d="H"],.c-pill[data-d="H"]{background:var(--band-b);border-color:transparent;color:#0b0c0f}
+.c-dec{display:flex;align-items:center;gap:12px;border-top:1px solid var(--console-rule);padding-top:14px;font-size:13px}
+.c-pill{display:inline-grid;place-items:center;min-width:44px;height:32px;padding-inline:10px;border-radius:var(--r-pill);border:1px solid var(--console-rule);font-weight:600;font-size:15px}
+
+/* ---------- 02 problem ---------- */
+.prob-grid{display:grid;gap:clamp(40px,7vh,72px);margin-top:clamp(28px,5vh,48px)}
+.strip{display:grid;grid-template-columns:minmax(0,2.1fr) minmax(0,1fr);gap:clamp(24px,4vw,56px);align-items:center}
+.frames{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:10px}
+.mf svg{display:block;width:100%;height:auto;border-radius:var(--r-sm)}
+.mf-cost{display:block;height:6px;border-radius:3px;background:var(--band-rule);margin-top:8px;overflow:hidden}
+.mf-cost i{display:block;height:100%;background:var(--band-b);transform-origin:0 50%}
+.mf-lab{display:block;margin-top:6px;font:400 11px/1 var(--font-mono);color:var(--on-band-3)}
+.eq{display:flex;flex-direction:column;gap:10px;border-left:1px solid var(--band-rule);padding-left:clamp(18px,2.5vw,32px)}
+.eq-big{font:500 clamp(48px,5.6vw,80px)/1 var(--font-body);letter-spacing:-.04em}
+.eq-big small{font:500 clamp(16px,1.6vw,22px)/1 var(--font-mono);letter-spacing:0;color:var(--on-band-2);margin-left:6px}
+.eq-txt{color:var(--on-band-2);font-size:15px;max-width:34ch}
+.dn-wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:clamp(24px,4vw,56px);align-items:center}
+.dn-text{display:flex;flex-direction:column;gap:18px}
+.rq{display:flex;gap:12px;align-items:baseline;border-top:1px solid var(--band-rule);padding-top:14px;color:var(--on-band-2);font-size:16px;max-width:44ch}
+.rq b{font:500 12px/1 var(--font-mono);color:var(--coral);letter-spacing:.06em;flex:none}
+.dn{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.dn figure{display:flex;flex-direction:column;gap:8px}
+.dn svg{display:block;width:100%;height:auto;border-radius:var(--r-md)}
+.dn figcaption{font:500 11px/1.3 var(--font-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--on-band-3)}
+.svg-mono{font-family:var(--font-mono)}
+.svg-body{font-family:var(--font-body)}
+
+/* ---------- 03 relevance ---------- */
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(20px,3vw,40px);margin-top:clamp(32px,5vh,52px)}
+.stat{display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--fg);padding-top:18px}
+.stat-v{font:500 clamp(40px,4.4vw,64px)/1 var(--font-body);letter-spacing:-.035em}
+.stat-l{color:var(--fg-2);font-size:15.5px;line-height:1.45;max-width:32ch}
+.rel-chart{margin-top:clamp(36px,6vh,64px)}
+
+/* ---------- charts ---------- */
+.chart{display:flex;flex-direction:column;gap:12px;min-width:0}
+.chart-title{font:500 18px/1.3 var(--font-body);letter-spacing:-.01em}
+.band .chart-title{color:var(--on-band)}
+.plot{width:100%;min-width:0;position:relative}
+.plot svg{display:block;overflow:visible}
+.plot text{font-family:var(--font-body);font-size:13px}
+.plot .tick{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.02em}
+.t-1{fill:var(--fg)}.t-2{fill:var(--fg-2)}.t-3{fill:var(--fg-3)}
+.band .t-1{fill:var(--on-band)}.band .t-2{fill:var(--on-band-2)}.band .t-3{fill:var(--on-band-3)}
+.strong{font-weight:600}
+.halo{paint-order:stroke;stroke:var(--ring);stroke-width:6px;stroke-linejoin:round}
+.grid{stroke:var(--rule);stroke-width:1;shape-rendering:crispEdges}
+.band .grid{stroke:var(--band-rule)}
+.zero{stroke:var(--fg-3);stroke-width:1;shape-rendering:crispEdges}
+.ref{stroke:var(--fg-3);stroke-width:1.5;stroke-dasharray:5 5}
+.band .ref{stroke:var(--on-band-2)}
+.m-a{fill:var(--mark-a)}.m-b{fill:var(--mark-b)}.m-n{fill:var(--mark-n)}
+.band .m-a{fill:var(--band-a)}.band .m-b{fill:var(--band-b)}.band .m-n{fill:var(--band-n)}
+.line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.line.m-a{fill:none;stroke:var(--mark-a)}.line.m-b{fill:none;stroke:var(--mark-b)}.line.m-n{fill:none;stroke:var(--mark-n)}
+.band .line.m-a{stroke:var(--band-a)}.band .line.m-b{stroke:var(--band-b)}.band .line.m-n{stroke:var(--band-n)}
+.dot{stroke:var(--ring);stroke-width:2}
+.band .dot{stroke:var(--band-ring)}
+.zone{fill:rgba(0,0,0,.24)}
+.hit{fill:transparent;outline:none}
+.hit:focus-visible{stroke:var(--focus);stroke-width:2}
+.bar{transform-box:fill-box;transform-origin:0 50%;transition:opacity .15s}
+.bar.neg{transform-origin:100% 50%}
+.bar.is-hot{opacity:.75}
+.xhair{stroke:var(--fg-3);stroke-width:1;opacity:0}
+.xhair.on{opacity:1}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--fg-2)}
+.band .legend{color:var(--on-band-2)}
+.legend span{display:inline-flex;align-items:center;gap:8px}
+.k{display:inline-block;width:16px;height:2px;border-radius:1px}
+.k.m-a{background:var(--mark-a)}.k.m-b{background:var(--mark-b)}.k.m-n{background:var(--mark-n)}
+.band .k.m-a{background:var(--band-a)}.band .k.m-b{background:var(--band-b)}.band .k.m-n{background:var(--band-n)}
+.tip{position:fixed;left:0;top:0;z-index:70;pointer-events:none;background:var(--console);color:var(--console-fg);border-radius:var(--r-sm);padding:8px 11px;display:flex;flex-direction:column;gap:2px;max-width:260px;font:400 12px/1.35 var(--font-body)}
+.tip strong{font:500 15px/1.2 var(--font-body)}
+.tip span{color:var(--console-fg-2)}
+
+/* ---------- 04 S: papers ---------- */
+.filters{display:flex;flex-wrap:wrap;gap:8px;margin-top:clamp(24px,4vh,36px)}
+.fchip{font:500 12.5px/1 var(--font-mono);letter-spacing:.02em;padding:9px 14px;border-radius:var(--r-pill);border:1px solid var(--rule);background:transparent;color:var(--fg-2);cursor:pointer}
+.fchip:hover{border-color:var(--fg-3)}
+.fchip[aria-pressed="true"]{background:var(--fg);border-color:var(--fg);color:var(--bg)}
+.fchip.ru{border-color:var(--coral);color:var(--coral-ink);background:var(--coral-soft)}
+.fchip.ru[aria-pressed="true"]{background:var(--coral);border-color:var(--coral);color:#17171c}
+.papers{margin-top:18px;border-top:1px solid var(--fg)}
+.paper{display:grid;grid-template-columns:64px minmax(0,.95fr) minmax(0,1.6fr) 230px;gap:22px;align-items:baseline;padding-block:15px;border-bottom:1px solid var(--rule);transition:opacity .25s ease}
+.p-year{font:500 13px/1.4 var(--font-mono);color:var(--fg-3);font-variant-numeric:tabular-nums}
+.p-name{font:500 16px/1.35 var(--font-body);color:var(--fg)}
+.p-name small{display:block;margin-top:3px;font:400 11.5px/1.4 var(--font-mono);color:var(--fg-3)}
+.p-hyp{font-size:16px;line-height:1.45;color:var(--fg-2);text-wrap:pretty}
+.p-tags{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.papers[data-filter="when"] .paper:not([data-lanes~="when"]),
+.papers[data-filter="what"] .paper:not([data-lanes~="what"]),
+.papers[data-filter="kf"] .paper:not([data-lanes~="kf"]),
+.papers[data-filter="trust"] .paper:not([data-lanes~="trust"]),
+.papers[data-filter="ru"] .paper:not([data-lanes~="ru"]){opacity:.2}
+.papers-note{margin-top:14px}
+
+/* ---------- 04 T: problems ---------- */
+.t-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-top:clamp(28px,5vh,44px)}
+.card{background:var(--card);border-radius:var(--r-md);padding:clamp(18px,2.2vw,28px);display:flex;flex-direction:column;gap:12px;min-width:0}
+.anat{grid-column:1 / -1;display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:clamp(20px,3vw,40px);align-items:center}
+.anat-head{grid-column:1 / -1}
+.anat-scroll{overflow-x:auto;min-width:0}
+.anat-scroll svg{display:block;width:100%;min-width:520px;height:auto}
+.an-node rect,.an-node path{fill:var(--wash);stroke:var(--rule);stroke-width:1.5}
+.an-heavy rect{fill:var(--fg);stroke:var(--fg)}
+.an-heavy text{fill:var(--bg)!important}
+.an-node text{font:500 15px var(--font-body);fill:var(--fg)}
+.an-node .an-sub{font:400 12.5px var(--font-mono);fill:var(--fg-3)}
+.an-heavy .an-sub{fill:var(--bg)!important;opacity:.7}
+.an-edge{fill:none;stroke:var(--fg-3);stroke-width:1.5}
+.arr-head{fill:var(--fg-3)}
+.an-lbl{font:500 12px var(--font-mono);fill:var(--fg-3)}
+.an-call circle{fill:var(--coral)}
+.an-call text{font:600 13px var(--font-mono);fill:#17171c}
+.calls{display:flex;flex-direction:column}
+.calls li{display:grid;grid-template-columns:28px minmax(0,1fr);gap:12px;align-items:baseline;padding-block:11px;border-top:1px solid var(--rule);font-size:15px;line-height:1.45;color:var(--fg-2)}
+.calls li:first-child{border-top:0;padding-top:0}
+.calls i{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--coral);color:#17171c;font:600 12px/1 var(--font-mono);font-style:normal}
+.calls b{color:var(--fg);font-weight:500}
+.gap-strip{margin-top:18px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px 20px;align-items:baseline;background:var(--fg);color:var(--bg);border-radius:var(--r-md);padding:clamp(18px,2.2vw,26px)}
+.gap-strip b{font:500 12px/1.4 var(--font-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--coral)}
+.gap-strip p{font-size:clamp(16px,1.4vw,19px);line-height:1.45}
+
+/* ---------- 04 T: arena ---------- */
+.benches{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:clamp(28px,5vh,44px)}
+.bench{background:var(--stone);border-radius:var(--r-sm);padding:clamp(16px,1.8vw,22px);display:flex;flex-direction:column;gap:14px;min-width:0}
+.b-media{position:relative;border-radius:var(--r-md);overflow:hidden;aspect-ratio:2/1;background:#0b1624}
+.b-media svg{display:block;width:100%;height:100%}
+.b-tag{position:absolute;left:10px;top:10px;font:500 10.5px/1 var(--font-mono);letter-spacing:.07em;text-transform:uppercase;background:rgba(10,12,16,.72);color:#fff;padding:6px 9px;border-radius:var(--r-pill)}
+.bench h3{font-family:var(--font-display);font-weight:400;font-stretch:87.5%;font-size:21px;line-height:1.15;letter-spacing:-.03em}
+.b-facts li{display:flex;gap:8px;padding-block:7px;border-top:1px solid var(--rule);font-size:15px;color:var(--fg-2)}
+.b-facts b{color:var(--fg);font-weight:500}
+.b-role{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto}
+.metrics{margin-top:clamp(24px,4vh,36px);display:grid;gap:12px}
+.m-row{display:grid;grid-template-columns:150px minmax(0,1fr);gap:16px;align-items:center}
+.m-label{font:500 11.5px/1.35 var(--font-mono);letter-spacing:.07em;text-transform:uppercase;color:var(--fg-3)}
+.m-chips{display:flex;flex-wrap:wrap;gap:8px}
+.b-hud{font:500 10px var(--font-mono);fill:#fff;letter-spacing:.06em}
+.lane-a{fill:none;stroke:#f6f8fa;stroke-width:3;stroke-dasharray:11 10;animation:lane2 .9s linear infinite}
+@keyframes lane2{to{stroke-dashoffset:-21}}
+.shift-n{animation:shiftN 10s ease-in-out infinite}
+@keyframes shiftN{0%,12%{opacity:0}42%,58%{opacity:1}88%,100%{opacity:0}}
+.shift-dot{animation:shiftDot 10s ease-in-out infinite}
+@keyframes shiftDot{0%,12%{transform:translateX(0)}42%,58%{transform:translateX(144px)}88%,100%{transform:translateX(288px)}}
+.ua-car{animation:ua-r 6s linear infinite}
+.ua-car.c2{animation-duration:8s;animation-delay:-3s}
+.ua-car.c3{animation-name:ua-l;animation-duration:7s;animation-delay:-1s}
+.ua-car.c4{animation-name:ua-l;animation-duration:9.5s;animation-delay:-5s}
+@keyframes ua-r{from{transform:translateX(0)}to{transform:translateX(400px)}}
+@keyframes ua-l{from{transform:translateX(0)}to{transform:translateX(-400px)}}
+
+/* ---------- 05 A: ideas ---------- */
+.ideas{display:flex;flex-direction:column;margin-top:clamp(28px,5vh,44px)}
+.idea{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:clamp(24px,4vw,64px);align-items:center;padding-block:clamp(28px,4vh,44px);border-top:1px solid var(--band-rule)}
+.i-fig{background:var(--band-card);border:1px solid var(--band-rule);border-radius:var(--r-lg);padding:clamp(14px,2vw,24px);display:flex;flex-direction:column;gap:10px;min-width:0}
+.i-fig svg{display:block;width:100%;height:auto}
+.i-txt{display:flex;flex-direction:column;gap:14px;min-width:0}
+.i-num{font:500 12px/1.4 var(--font-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--on-band-3)}
+.i-num em{font-style:normal;color:var(--coral)}
+.i-txt p{color:var(--on-band-2);font-size:16px;line-height:1.5;max-width:46ch}
+.i-txt .hyp{color:var(--on-band);border-left:2px solid var(--coral);padding-left:14px}
+.formula{font:400 clamp(15px,1.4vw,18px)/1.4 var(--font-mono);color:var(--on-band);background:rgba(0,0,0,.18);border-radius:var(--r-sm);padding:10px 14px;align-self:flex-start;max-width:100%;overflow-x:auto;white-space:nowrap}
+.i-checks{display:flex;flex-wrap:wrap;gap:6px}
+.i-small{font-size:13.5px!important;color:var(--on-band-3)!important}
+.rt-lane{fill:none;stroke:var(--band-rule);stroke-width:2}
+.rt-gate rect{fill:var(--band);stroke:var(--on-band-2);stroke-width:1.5}
+.rt-gate text{font:600 11px var(--font-mono);fill:var(--on-band)}
+.rt-in{font:500 11px var(--font-mono);fill:var(--on-band-3)}
+.rt-lab{font:400 12.5px var(--font-body);fill:var(--on-band-2)}
+.rt-lab .kk{font:600 12.5px var(--font-mono);fill:var(--on-band)}
+.rt-cost.p{fill:var(--on-band-2)}.rt-cost.l{fill:var(--band-a)}.rt-cost.h{fill:var(--band-b)}
+.rt-scale{font:400 10px var(--font-mono);fill:var(--on-band-3)}
+.tok rect{stroke:var(--band);stroke-width:1.5}
+.tok-P rect{fill:#ffffff}.tok-L rect{fill:var(--band-a)}.tok-H rect{fill:var(--band-b)}
+.tok{opacity:0;animation:tokIn .2s .06s forwards}
+@keyframes tokIn{to{opacity:1}}
+.newview{display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px 24px;align-items:baseline;border-top:1px solid var(--band-rule);padding-top:24px}
+.newview b{font:500 12px/1.4 var(--font-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--coral)}
+.newview p{color:var(--on-band-2);font-size:16px;max-width:76ch}
+
+/* ---------- R ---------- */
+.win{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:clamp(24px,4vw,56px);align-items:center;margin-top:clamp(28px,5vh,44px)}
+.par{background:var(--stone);border-radius:var(--r-lg);padding:clamp(16px,2vw,26px);display:flex;flex-direction:column;gap:8px;min-width:0}
+.par svg{display:block;width:100%;height:auto}
+.ax{fill:none;stroke:var(--fg-3);stroke-width:1.5}
+.ax-l{font:500 12px var(--font-mono);fill:var(--fg-3)}
+.front{fill:none;stroke:var(--mark-n);stroke-width:2}
+.dom{fill:var(--coral-soft)}
+.dom-edge{fill:none;stroke:var(--coral);stroke-width:1.5;stroke-dasharray:5 5}
+.dom-tx{font:500 12px var(--font-mono);fill:var(--coral-ink);letter-spacing:.04em}
+.pt-n{fill:var(--mark-n);stroke:var(--stone);stroke-width:2}
+.pt-a{fill:var(--mark-a);stroke:var(--stone);stroke-width:2}
+.pt-tx{font:500 13px var(--font-body);fill:var(--fg)}
+.pt-sub{font:400 11.5px var(--font-mono);fill:var(--fg-3)}
+.arrow{fill:none;stroke:var(--mark-b);stroke-width:2.5}
+.arrow-head{fill:var(--mark-b)}
+.crit{display:flex;flex-direction:column}
+.crit li{display:grid;grid-template-columns:40px minmax(0,1fr);gap:14px;align-items:baseline;padding-block:16px;border-top:1px solid var(--rule);font-size:clamp(17px,1.45vw,20px);line-height:1.4}
+.crit li:last-child{border-bottom:1px solid var(--rule)}
+.crit i{font:500 13px/1 var(--font-mono);font-style:normal;color:var(--coral-ink)}
+.floor{margin-top:20px;color:var(--fg-2);font-size:15.5px;max-width:52ch}
+
+/* ---------- sources ---------- */
+.sources{background:var(--wash)}
+.sources.sec{min-height:0}
+.src-list{margin-top:24px;border-top:1px solid var(--fg)}
+.src-list li{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:14px 20px;align-items:baseline;padding-block:11px;border-bottom:1px solid var(--rule);font-size:14.5px;line-height:1.45;color:var(--fg-2)}
+.src-list .y{font:500 12.5px/1.4 var(--font-mono);color:var(--fg-3)}
+.src-list a{white-space:nowrap;font:500 12.5px/1.4 var(--font-mono)}
+.foot{background:var(--console);color:var(--console-fg-2);padding-block:28px;font:400 12px/1.5 var(--font-mono)}
+.foot .wrap{display:flex;justify-content:space-between;gap:8px 24px;flex-wrap:wrap}
+
+/* ---------- side dots ---------- */
+.dots{position:fixed;right:calc(14px + env(safe-area-inset-right,0px));top:50%;transform:translateY(-50%);z-index:40;display:flex;flex-direction:column;gap:2px}
+.dots a{position:relative;display:grid;place-items:center;width:26px;height:26px;border-radius:50%}
+.dots a::before{content:"";width:8px;height:8px;border-radius:50%;border:1.5px solid var(--fg-3);transition:background .2s,border-color .2s,transform .2s}
+.dots a.on::before{background:var(--fg);border-color:var(--fg);transform:scale(1.15)}
+.dots.on-band a::before{border-color:rgba(255,255,255,.6)}
+.dots.on-band a.on::before{background:#fff;border-color:#fff}
+.dots span{position:absolute;right:30px;top:50%;transform:translateY(-50%);white-space:nowrap;font:500 11px/1 var(--font-mono);letter-spacing:.04em;background:var(--console);color:var(--console-fg);padding:6px 9px;border-radius:var(--r-pill);opacity:0;pointer-events:none;transition:opacity .2s}
+.dots a:hover span,.dots a:focus-visible span{opacity:1}
+
+/* ---------- build-in animations (only after the observer arms an off-screen block) ---------- */
+.armed .bar{transform:scaleX(0)}
+.play .bar{animation:barIn .9s var(--ease) backwards;animation-delay:calc(var(--i,0) * 90ms + 120ms)}
+@keyframes barIn{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.armed .line{stroke-dasharray:var(--len);stroke-dashoffset:var(--len)}
+.play .line{stroke-dasharray:var(--len);animation:draw 1.3s var(--ease) backwards;animation-delay:calc(var(--i,0) * 160ms + 150ms)}
+@keyframes draw{from{stroke-dashoffset:var(--len)}to{stroke-dashoffset:0}}
+.armed .dot,.armed .pop{opacity:0}
+.play .dot,.play .pop{animation:pop .35s ease backwards;animation-delay:calc(var(--i,0) * 120ms + 900ms)}
+@keyframes pop{from{opacity:0;transform:scale(.4)}}
+.dot,.pop{transform-box:fill-box;transform-origin:center}
+.armed .paper{opacity:0;transform:translateY(10px)}
+.play .paper{animation:rowIn .55s var(--ease) backwards;animation-delay:calc(var(--i,0) * 55ms)}
+@keyframes rowIn{from{opacity:0;transform:translateY(10px)}}
+.armed .mf-cost i{transform:scaleX(0)}
+.play .mf-cost i{animation:barIn .5s var(--ease) backwards;animation-delay:calc(var(--i,0) * 110ms + 100ms)}
+.play .mf svg{animation:flash .5s ease backwards;animation-delay:calc(var(--i,0) * 110ms + 100ms)}
+@keyframes flash{from{outline:2px solid var(--coral);outline-offset:2px}}
+.armed .rise{opacity:0;transform:translateY(14px)}
+.play .rise{animation:rowIn .6s var(--ease) backwards;animation-delay:calc(var(--i,0) * 100ms)}
+
+/* ---------- responsive ---------- */
+@media (max-width:1100px){.dots{display:none}}
+@media (max-width:960px){
+  .media{grid-template-columns:1fr}
+  .console{border-left:0;border-top:1px solid var(--console-rule)}
+  .hero-sub,.strip,.dn-wrap,.anat,.idea,.win{grid-template-columns:1fr}
+  .benches{grid-template-columns:1fr 1fr}
+  .eq{border-left:0;border-top:1px solid var(--band-rule);padding-left:0;padding-top:18px}
+}
+@media (max-width:820px){
+  .paper{grid-template-columns:52px minmax(0,1fr);gap:6px 14px}
+  .p-hyp,.p-tags{grid-column:2}
+  .p-tags{justify-content:flex-start}
+  .t-grid{grid-template-columns:1fr}
+  .stats{grid-template-columns:1fr}
+  .m-row{grid-template-columns:1fr;gap:8px}
+}
+@media (max-width:640px){
+  .frames{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .dn{grid-template-columns:1fr}
+  .benches{grid-template-columns:1fr}
+  .gap-strip,.newview{grid-template-columns:1fr}
+  .src-list li{grid-template-columns:48px minmax(0,1fr)}
+  .src-list a{grid-column:2}
+  .chip{white-space:normal;line-height:1.3}
+}
+@media (prefers-reduced-motion: reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+
+<svg class="sprite" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="m-sky-d" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9dbfdc"/><stop offset="1" stop-color="#e8eff4"/></linearGradient>
+    <linearGradient id="m-sky-n" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#02070f"/><stop offset="1" stop-color="#132f4b"/></linearGradient>
+    <radialGradient id="m-glow"><stop offset="0" stop-color="#ff4b36" stop-opacity=".8"/><stop offset="1" stop-color="#ff4b36" stop-opacity="0"/></radialGradient>
+    <radialGradient id="m-lamp"><stop offset="0" stop-color="#ffd27a" stop-opacity=".55"/><stop offset="1" stop-color="#ffd27a" stop-opacity="0"/></radialGradient>
+  </defs>
+  <symbol id="mbg-d" viewBox="0 0 320 180" preserveAspectRatio="xMidYMid slice">
+    <rect width="320" height="92" fill="url(#m-sky-d)"/>
+    <g fill="#b7c4d0"><rect x="0" y="60" width="34" height="34"/><rect x="30" y="46" width="26" height="48"/><rect x="54" y="66" width="30" height="28"/><rect x="82" y="56" width="20" height="38"/><rect x="214" y="64" width="24" height="30"/><rect x="236" y="50" width="22" height="44"/><rect x="256" y="68" width="30" height="26"/><rect x="284" y="58" width="36" height="36"/></g>
+    <rect y="88" width="320" height="92" fill="#c9d1d8"/>
+    <polygon points="144,88 176,88 320,180 0,180" fill="#7f878f"/>
+    <g fill="none" stroke="#f6f8fa" stroke-width="3" stroke-dasharray="11 10"><path d="M155 88 L92 180"/><path d="M165 88 L228 180"/></g>
+  </symbol>
+  <symbol id="mbg-n" viewBox="0 0 320 180" preserveAspectRatio="xMidYMid slice">
+    <rect width="320" height="92" fill="url(#m-sky-n)"/>
+    <g fill="#d9e4ff" opacity=".7"><circle cx="40" cy="18" r=".9"/><circle cx="120" cy="30" r=".8"/><circle cx="190" cy="14" r="1"/><circle cx="270" cy="26" r=".8"/></g>
+    <g fill="#0b1a2b"><rect x="0" y="60" width="34" height="34"/><rect x="30" y="46" width="26" height="48"/><rect x="54" y="66" width="30" height="28"/><rect x="82" y="56" width="20" height="38"/><rect x="214" y="64" width="24" height="30"/><rect x="236" y="50" width="22" height="44"/><rect x="256" y="68" width="30" height="26"/><rect x="284" y="58" width="36" height="36"/></g>
+    <g fill="#ffcf6e"><rect x="8" y="68" width="3" height="4"/><rect x="38" y="54" width="3" height="4"/><rect x="44" y="66" width="3" height="4"/><rect x="62" y="74" width="3" height="4"/><rect x="88" y="62" width="3" height="4"/><rect x="220" y="72" width="3" height="4"/><rect x="242" y="58" width="3" height="4"/><rect x="264" y="76" width="3" height="4"/><rect x="292" y="66" width="3" height="4"/><rect x="304" y="74" width="3" height="4"/></g>
+    <rect y="88" width="320" height="92" fill="#0a131d"/>
+    <polygon points="144,88 176,88 320,180 0,180" fill="#18212c"/>
+    <circle cx="70" cy="92" r="40" fill="url(#m-lamp)"/>
+    <circle cx="252" cy="92" r="40" fill="url(#m-lamp)"/>
+    <g fill="none" stroke="#8995a3" stroke-width="3" stroke-dasharray="11 10"><path d="M155 88 L92 180"/><path d="M165 88 L228 180"/></g>
+  </symbol>
+  <symbol id="mcar-d" viewBox="0 0 64 42">
+    <ellipse cx="32" cy="39" rx="31" ry="3" fill="rgba(20,26,32,.28)"/>
+    <path d="M10 13 L17 2 Q18 0 20 0 H44 Q46 0 47 2 L54 13 Z" fill="#dfe4e9"/>
+    <rect x="19" y="3" width="26" height="8" rx="2" fill="#4f6275"/>
+    <rect x="0" y="12" width="64" height="25" rx="5" fill="#eef1f4"/>
+    <rect x="3" y="17" width="13" height="5" rx="1.5" fill="#c9372a"/>
+    <rect x="48" y="17" width="13" height="5" rx="1.5" fill="#c9372a"/>
+    <rect x="24" y="26" width="16" height="5" rx="1" fill="#f7f7f2"/>
+    <rect x="4" y="35" width="10" height="6" rx="1.5" fill="#1f252c"/>
+    <rect x="50" y="35" width="10" height="6" rx="1.5" fill="#1f252c"/>
+  </symbol>
+  <symbol id="mcar-n" viewBox="0 0 64 42">
+    <path d="M10 13 L17 2 Q18 0 20 0 H44 Q46 0 47 2 L54 13 Z" fill="#2b343f"/>
+    <rect x="19" y="3" width="26" height="8" rx="2" fill="#121a23"/>
+    <rect x="0" y="12" width="64" height="25" rx="5" fill="#36414e"/>
+    <circle cx="9.5" cy="19.5" r="9" fill="url(#m-glow)"/>
+    <circle cx="54.5" cy="19.5" r="9" fill="url(#m-glow)"/>
+    <rect x="3" y="17" width="13" height="5" rx="1.5" fill="#ff5c45"/>
+    <rect x="48" y="17" width="13" height="5" rx="1.5" fill="#ff5c45"/>
+    <rect x="24" y="26" width="16" height="5" rx="1" fill="#8f99a4"/>
+    <rect x="4" y="35" width="10" height="6" rx="1.5" fill="#0d1116"/>
+    <rect x="50" y="35" width="10" height="6" rx="1.5" fill="#0d1116"/>
+  </symbol>
+  <symbol id="mcar-top" viewBox="0 0 34 14">
+    <rect width="34" height="14" rx="4"/>
+    <rect x="20" y="2" width="8" height="10" rx="2" fill="rgba(10,14,20,.55)"/>
+  </symbol>
+</svg>
+
+<div class="progress" aria-hidden="true"><i></i></div>
+
+<div class="announce">
+  <div class="wrap">
+    <span>Иллюстрации подписаны «иллюстрация, не данные». Все остальные числа взяты из работ — ссылки в конце страницы.</span>
+    <a href="#istochniki">Источники</a>
+  </div>
+</div>
+
+<main>
+
+<!-- ================= 01 ТЕМА ================= -->
+<section class="sec hero" id="tema" data-nav="Тема">
+  <div class="wrap">
+    <div class="topline">
+      <p class="eyebrow"><span class="num">01</span><span>Тема</span></p>
+      <p class="eyebrow">Андрей · УрФУ, прикладной анализ данных · 29.10.2026</p>
+    </div>
+    <h1 class="h1">Многоуровневый инференс детекции объектов при сдвиге домена</h1>
+    <div class="hero-sub">
+      <div class="topic">
+        <p class="eyebrow">Рабочая формулировка темы</p>
+        <p class="topic-ru">Управление вычислениями при детекции объектов в видеопотоке для edge-сценариев по сигналам неопределённости в условиях сдвига домена</p>
+        <p class="topic-en">Uncertainty-driven compute control for video object detection in edge scenarios under domain shift</p>
+      </div>
+      <div class="forks">
+        <p class="eyebrow">Развилки · выберем по первым результатам</p>
+        <ol>
+          <li><b>Метод</b><span>многоуровневый инференс с контролем доли ошибок</span></li>
+          <li><b>Исследование</b><span>надёжность сигналов неопределённости при сдвиге</span></li>
+          <li><b>Гарантии</b><span>онлайн-калибровка решений гейта</span></li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="media" id="hero-media">
+      <div class="scene" id="scene">
+        <svg viewBox="0 0 960 440" role="img" aria-labelledby="scene-title">
+          <title id="scene-title">Иллюстрация: на каждом кадре гейт выбирает прогноз трекера, лёгкую или тяжёлую модель. Ночью машина перестраивается, прогноз отстаёт, а неопределённость остаётся низкой.</title>
+          <defs>
+            <linearGradient id="h-sky-d" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#94b8d8"/><stop offset="1" stop-color="#e7eef4"/></linearGradient>
+            <linearGradient id="h-sky-n" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#01060e"/><stop offset="1" stop-color="#12304d"/></linearGradient>
+            <radialGradient id="h-glow"><stop offset="0" stop-color="#ff4b36" stop-opacity=".7"/><stop offset="1" stop-color="#ff4b36" stop-opacity="0"/></radialGradient>
+            <radialGradient id="h-lamp"><stop offset="0" stop-color="#ffd27a" stop-opacity=".6"/><stop offset="1" stop-color="#ffd27a" stop-opacity="0"/></radialGradient>
+          </defs>
+          <rect width="960" height="250" fill="url(#h-sky-d)"/>
+          <g class="n-only">
+            <rect width="960" height="250" fill="url(#h-sky-n)"/>
+            <g fill="#dbe6ff" opacity=".75"><circle cx="80" cy="40" r="1.4"/><circle cx="170" cy="78" r="1.1"/><circle cx="260" cy="30" r="1.3"/><circle cx="380" cy="60" r="1"/><circle cx="520" cy="26" r="1.4"/><circle cx="640" cy="70" r="1.1"/><circle cx="730" cy="34" r="1.2"/><circle cx="850" cy="56" r="1.3"/><circle cx="910" cy="22" r="1"/></g>
+          </g>
+          <g class="city">
+            <rect x="0" y="168" width="74" height="72"/><rect x="66" y="142" width="54" height="98"/><rect x="114" y="184" width="64" height="56"/><rect x="172" y="158" width="46" height="82"/><rect x="214" y="192" width="74" height="48"/><rect x="300" y="206" width="60" height="34"/>
+            <rect x="610" y="204" width="56" height="36"/><rect x="672" y="174" width="62" height="66"/><rect x="728" y="146" width="50" height="94"/><rect x="772" y="186" width="72" height="54"/><rect x="838" y="162" width="56" height="78"/><rect x="890" y="190" width="70" height="50"/>
+          </g>
+          <g class="n-only" fill="#ffcf6e">
+            <rect x="14" y="184" width="6" height="8"/><rect x="40" y="204" width="6" height="8"/><rect x="80" y="160" width="6" height="8"/><rect x="98" y="188" width="6" height="8"/><rect x="84" y="214" width="6" height="8"/><rect x="132" y="200" width="6" height="8"/><rect x="186" y="174" width="6" height="8"/><rect x="198" y="206" width="6" height="8"/><rect x="236" y="208" width="6" height="8"/>
+            <rect x="690" y="190" width="6" height="8"/><rect x="708" y="214" width="6" height="8"/><rect x="742" y="164" width="6" height="8"/><rect x="756" y="198" width="6" height="8"/><rect x="792" y="204" width="6" height="8"/><rect x="852" y="180" width="6" height="8"/><rect x="868" y="208" width="6" height="8"/><rect x="912" y="204" width="6" height="8"/>
+          </g>
+          <rect class="ground" y="236" width="960" height="204"/>
+          <polygon class="road" points="430,236 530,236 960,440 0,440"/>
+          <path class="edge" d="M430 236 L0 440 M530 236 L960 440"/>
+          <path class="lane" d="M463 236 L250 440"/>
+          <path class="lane" d="M497 236 L710 440"/>
+          <g><path class="pole" d="M200 334 V184 H232"/><circle class="lamp-head" cx="234" cy="186" r="5"/><circle class="n-only" cx="234" cy="196" r="72" fill="url(#h-lamp)"/></g>
+          <g><path class="pole" d="M760 334 V184 H728"/><circle class="lamp-head" cx="726" cy="186" r="5"/><circle class="n-only" cx="726" cy="196" r="72" fill="url(#h-lamp)"/></g>
+
+          <g id="carB" class="car carB on" style="transform:translate(352px,240px) scale(.52)">
+            <ellipse class="c-shadow" cx="75" cy="93" rx="82" ry="9"/>
+            <path class="c-roof" d="M24 30 L40 4 Q42 0 47 0 H103 Q108 0 110 4 L126 30 Z"/>
+            <rect class="c-glass" x="44" y="6" width="62" height="20" rx="4"/>
+            <rect class="c-body" x="0" y="28" width="150" height="56" rx="12"/>
+            <g class="c-glow"><circle cx="23" cy="46" r="26" fill="url(#h-glow)"/><circle cx="127" cy="46" r="26" fill="url(#h-glow)"/></g>
+            <rect class="c-tail" x="8" y="40" width="30" height="11" rx="3"/>
+            <rect class="c-tail" x="112" y="40" width="30" height="11" rx="3"/>
+            <rect class="c-plate" x="56" y="58" width="38" height="12" rx="2"/>
+            <rect class="c-tire" x="8" y="80" width="24" height="14" rx="3"/>
+            <rect class="c-tire" x="118" y="80" width="24" height="14" rx="3"/>
+          </g>
+          <g id="carA" class="car carA" style="transform:translate(405px,262px)">
+            <ellipse class="c-shadow" cx="75" cy="93" rx="82" ry="9"/>
+            <path class="c-roof" d="M24 30 L40 4 Q42 0 47 0 H103 Q108 0 110 4 L126 30 Z"/>
+            <rect class="c-glass" x="44" y="6" width="62" height="20" rx="4"/>
+            <rect class="c-body" x="0" y="28" width="150" height="56" rx="12"/>
+            <g class="c-glow"><circle cx="23" cy="46" r="26" fill="url(#h-glow)"/><circle cx="127" cy="46" r="26" fill="url(#h-glow)"/></g>
+            <rect class="c-tail" x="8" y="40" width="30" height="11" rx="3"/>
+            <rect class="c-tail" x="112" y="40" width="30" height="11" rx="3"/>
+            <rect class="c-plate" x="56" y="58" width="38" height="12" rx="2"/>
+            <rect class="c-tire" x="8" y="80" width="24" height="14" rx="3"/>
+            <rect class="c-tire" x="118" y="80" width="24" height="14" rx="3"/>
+          </g>
+
+          <g id="boxB" class="box boxB on" data-d="L"><rect class="frame" x="346" y="234" width="90" height="60" rx="5"/></g>
+          <g id="boxA" class="box boxA" data-d="P" style="transform:translate(0px,0px)">
+            <rect class="frame" x="395" y="254" width="170" height="112" rx="6"/>
+            <rect class="tagbg" x="395" y="226" width="136" height="24" rx="5"/>
+            <text id="tagA-t" class="tagtx" x="405" y="243">P · прогноз</text>
+          </g>
+          <g id="miss" class="miss">
+            <rect x="600" y="184" width="236" height="56" rx="8"/>
+            <text x="614" y="207">промах: рамка мимо</text>
+            <text x="614" y="228" class="sub">гейт уверен, u &lt; τ</text>
+          </g>
+
+          <rect class="hud-bg" x="18" y="18" width="150" height="30" rx="15"/>
+          <circle class="rec" cx="35" cy="33" r="5"/>
+          <text id="hud-frame" class="hud-tx" x="48" y="38">КАДР 0416</text>
+          <rect class="hud-phase-bg" x="176" y="18" width="80" height="30" rx="15"/>
+          <text id="hud-phase" class="hud-tx" x="216" y="38" text-anchor="middle">ДЕНЬ</text>
+          <rect class="hud-bg" x="18" y="398" width="214" height="26" rx="13"/>
+          <text class="hud-note" x="32" y="415">иллюстрация, не данные</text>
+        </svg>
+      </div>
+      <aside class="console" aria-label="Решения гейта по кадрам, иллюстрация">
+        <div class="c-head"><span>Гейт · решение на кадр</span><span class="c-phase" id="c-phase">день</span></div>
+        <div class="c-meter">
+          <div class="c-label"><span>неопределённость u</span><span class="c-uval" id="c-u">0.49</span></div>
+          <div class="c-track"><i id="c-fill" style="width:49%"></i><b class="c-tl"></b><b class="c-th"></b></div>
+          <div class="c-ticks"><span class="c-tl">τ<sub>L</sub> 0.5</span><span class="c-th">τ<sub>H</sub> 0.8</span></div>
+        </div>
+        <ol class="c-log" id="c-log">
+          <li><span>0412</span><span>u 0.05</span><span class="d" data-d="H">H</span><span class="why">YOLO26x · старт</span></li>
+          <li><span>0413</span><span>u 0.16</span><span class="d" data-d="P">P</span><span class="why">прогноз трекера</span></li>
+          <li><span>0414</span><span>u 0.27</span><span class="d" data-d="P">P</span><span class="why">прогноз трекера</span></li>
+          <li><span>0415</span><span>u 0.38</span><span class="d" data-d="P">P</span><span class="why">прогноз трекера</span></li>
+          <li><span>0416</span><span>u 0.49</span><span class="d" data-d="P">P</span><span class="why">прогноз трекера</span></li>
+        </ol>
+        <div class="c-dec"><span class="c-pill" id="c-pill" data-d="P">P</span><span id="c-what">прогноз трекера</span></div>
+      </aside>
+    </div>
+    <p class="legend-line"><span><b>P</b>прогноз трекера, почти без GPU</span><span><b>L</b>лёгкая модель, YOLO26n</span><span><b>H</b>тяжёлая модель, YOLO26x</span></p>
+  </div>
+</section>
+
+<!-- ================= 02 ПРОБЛЕМА ================= -->
+<section class="sec band" id="problema" data-nav="Проблема">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow"><span class="num">02</span><span>Проблема</span></p>
+      <h2 class="h2">Детектор платит за каждый кадр одинаково</h2>
+      <p class="lead">Соседние кадры почти не отличаются, а YOLO26x делает полный проход на каждом.</p>
+    </div>
+    <div class="prob-grid">
+      <div class="strip" data-anim>
+        <ol class="frames" aria-label="Восемь соседних кадров, на каждом полный проход YOLO26x">
+          <li class="mf" style="--i:0"><svg viewBox="0 0 320 180" aria-hidden="true"><use href="#mbg-d"/><use href="#mcar-d" x="128" y="108" width="64" height="42"/></svg><span class="mf-cost"><i></i></span><span class="mf-lab">t</span></li>
+          <li class="mf" style="--i:1"><svg viewBox="0 0 320 180" aria-hidden="true"><use href="#mbg-d"/><use href="#mcar-d" x="129" y="108" width="64" height="42"/></svg><span class="mf-cost"><i></i></span><span class="mf-lab">t+1</span></li>
+          <li class="mf" style="--i:2"><svg viewBox="0 0 320 180" aria-hidden="true"><use href="#mbg-d"/><use href="#mcar-d" x="130" y="108" width="64" height="42"/></svg><span class="mf-cost"><i></i></span><span class="mf-lab">t+2</span></li>
+          <li class="mf" style="--i:3"><svg viewBox="0 0 320 180" aria-hidden="true"><use href="#mbg-d"/><use href="#mcar-d" x="131" y="108" width="64" height="42"/></svg><span class="mf-cost"><i></i></span><span class="mf-lab">t+3</span></li>
+          <li class="mf" style="--i:4"><svg viewBox="0 0 320 180" aria-hidden="true"><use href="#mbg-d"/><use href="#mcar-d" x="132" y="108" width="64" height="42"/></svg><span class="mf-cost"><i></i></span><span class="mf-lab">t+4</span></li>
+          <li class="mf" style="--i:5"><svg viewBox="0 0 320 180" aria-hidden="true"><use href="#mbg-d"/><use href="#mcar-d" x="133" y="108" width="64" height="42"/></svg><span class="mf-cost"><i></i></span><span class="mf-lab">t+5</span></li>
+          <li class="mf" style="--i:6"><svg viewBox="0 0 320 180" aria-hidden="true"><use href="#mbg-d"/><use href="#mcar-d" x="134" y="108" width="64" height="42"/></svg><span class="mf-cost"><i></i></span><span class="mf-lab">t+6</span></li>
+          <li class="mf" style="--i:7"><svg viewBox="0 0 320 180" aria-hidden="true"><use href="#mbg-d"/><use href="#mcar-d" x="135" y="108" width="64" height="42"/></svg><span class="mf-cost"><i></i></span><span class="mf-lab">t+7</span></li>
+        </ol>
+        <div class="eq">
+          <p class="eq-big"><span data-count="5.8" data-dec="1">5.8</span><small>TFLOP/с</small></p>
+          <p class="eq-txt">30 кадров в секунду × 194.4 GFLOPs YOLO26x — на одну камеру, даже когда сцена стоит на месте</p>
+          <p class="src">GFLOPs: Ultralytics YOLO26, COCO 640</p>
+        </div>
+      </div>
+
+      <div class="dn-wrap">
+        <div class="dn-text">
+          <h3 class="h3d">Пропускать кадры по неопределённости трекера уже умеют. Днём это работает. А ночью?</h3>
+          <p class="rq"><b>RQ1</b><span>Остаётся ли сигнал неопределённости надёжным, когда меняется домен: день → ночь, погода, другая камера?</span></p>
+        </div>
+        <div>
+          <div class="dn">
+            <figure>
+              <svg viewBox="0 0 320 180" role="img" aria-label="День: неопределённость ниже порога, кадр пропущен, рамка на месте">
+                <use href="#mbg-d"/><use href="#mcar-d" x="128" y="108" width="64" height="42"/>
+                <rect x="121" y="101" width="78" height="56" rx="4" fill="none" stroke="#2166ea" stroke-width="2.5" stroke-dasharray="7 5"/>
+                <rect x="8" y="8" width="150" height="40" rx="8" fill="rgba(10,12,16,.74)"/>
+                <text x="18" y="25" class="svg-mono" font-size="11" fill="#fff">u = 0.21 &lt; τ</text>
+                <text x="18" y="41" class="svg-body" font-size="11" fill="#cfd3da">→ пропуск кадра</text>
+                <rect x="8" y="150" width="128" height="22" rx="11" fill="#ffffff"/>
+                <text x="20" y="165" class="svg-body" font-size="11" font-weight="600" fill="#17171c">✓ рамка на месте</text>
+              </svg>
+              <figcaption>день</figcaption>
+            </figure>
+            <figure>
+              <svg viewBox="0 0 320 180" role="img" aria-label="Ночь: та же неопределённость, кадр пропущен, но объект ушёл из рамки">
+                <use href="#mbg-n"/><use href="#mcar-n" x="186" y="108" width="64" height="42"/>
+                <rect x="121" y="101" width="78" height="56" rx="4" fill="none" stroke="#ff5a3c" stroke-width="2.5" stroke-dasharray="7 5"/>
+                <path d="M200 129 H232" stroke="#ff5a3c" stroke-width="2"/>
+                <rect x="8" y="8" width="150" height="40" rx="8" fill="rgba(10,12,16,.74)"/>
+                <text x="18" y="25" class="svg-mono" font-size="11" fill="#fff">u = 0.21 &lt; τ</text>
+                <text x="18" y="41" class="svg-body" font-size="11" fill="#cfd3da">→ пропуск кадра</text>
+                <rect x="8" y="150" width="190" height="22" rx="11" fill="#ff5a3c"/>
+                <text x="20" y="165" class="svg-body" font-size="11" font-weight="600" fill="#17171c">✗ объект ушёл, гейт не заметил</text>
+              </svg>
+              <figcaption>ночь</figcaption>
+            </figure>
+          </div>
+          <p class="illus" style="margin-top:10px">иллюстрация, не данные</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 03 АКТУАЛЬНОСТЬ ================= -->
+<section class="sec" id="aktualnost" data-nav="Актуальность">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow"><span class="num">03</span><span>Актуальность</span></p>
+      <h2 class="h2">Зачем это решать</h2>
+      <p class="lead">Детекция на edge — это машины и камеры трафика без облака: бюджет энергии и задержки жёсткий, а условия съёмки меняются каждые сутки.</p>
+    </div>
+    <div class="stats" data-anim>
+      <div class="stat rise" style="--i:0"><p class="stat-v">12–18 %</p><p class="stat-l">меньше энергии на Jetson, AP@50 в пределах ±1.2 п.п. — пропуск кадров окупается</p><p class="src">Albireo · SEC 2026</p></div>
+      <div class="stat rise" style="--i:1"><p class="stat-v">≈ 50 / 50</p><p class="stat-l">дневных и ночных видео в BDD100K — ночь не редкий случай</p><p class="src">BDD100K · CVPR 2020</p></div>
+      <div class="stat rise" style="--i:2"><p class="stat-v">46.9 → 15.4</p><p class="stat-l">mAP детектора, обученного на ясном дне, если тестировать ночью</p><p class="src">SHIFT · CVPR 2022, табл. 2</p></div>
+    </div>
+    <figure class="chart rel-chart" id="ch-shift" data-anim>
+      <figcaption>
+        <p class="chart-title">Детектор, обученный на ясном дне: mAP по условиям съёмки</p>
+        <p class="src">Faster R-CNN · SHIFT (Sun et al., CVPR 2022), табл. 2</p>
+      </figcaption>
+      <div class="plot"></div>
+      <table class="sr-only">
+        <caption>mAP, %, обучение на ясном дне (SHIFT, табл. 2)</caption>
+        <tr><th>Условие</th><th>mAP</th></tr>
+        <tr><td>Переменная облачность</td><td>47.4</td></tr><tr><td>Ясный день</td><td>46.9</td></tr><tr><td>Дождь</td><td>41.3</td></tr><tr><td>Пасмурно</td><td>41.1</td></tr><tr><td>Рассвет и сумерки</td><td>37.3</td></tr><tr><td>Туман</td><td>21.0</td></tr><tr><td>Ночь</td><td>15.4</td></tr>
+      </table>
+    </figure>
+  </div>
+</section>
+
+<!-- ================= 04 S: ОБЗОР ================= -->
+<section class="sec" id="obzor" data-nav="S · Обзор">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow"><span class="num">04</span><span class="star">S</span><span>Situation · обзор статей</span></p>
+      <h2 class="h2">Что уже пробовали</h2>
+      <p class="lead">Десять работ в четырёх линиях, у каждой своя гипотеза. Четыре из них русскоязычные.</p>
+    </div>
+    <div class="filters" role="group" aria-label="Показать линию работ">
+      <button type="button" class="fchip" data-f="all" aria-pressed="true">все</button>
+      <button type="button" class="fchip" data-f="when" aria-pressed="false">когда считать</button>
+      <button type="button" class="fchip" data-f="what" aria-pressed="false">что запускать</button>
+      <button type="button" class="fchip" data-f="kf" aria-pressed="false">фильтр Калмана</button>
+      <button type="button" class="fchip" data-f="trust" aria-pressed="false">можно ли доверять</button>
+      <button type="button" class="fchip ru" data-f="ru" aria-pressed="false">RU · русскоязычные</button>
+    </div>
+    <ol class="papers" id="papers" data-filter="all" data-anim>
+      <li class="paper" data-lanes="kf ru" style="--i:0">
+        <span class="p-year">2012</span>
+        <span class="p-name">Великанова, Ворошилин<small>Доклады ТУСУРа</small></span>
+        <span class="p-hyp">Шумы фильтра Калмана можно подстраивать по невязкам — под манёвр объекта</span>
+        <span class="p-tags"><span class="chip">фильтр Калмана</span><span class="chip ru">RU</span></span>
+      </li>
+      <li class="paper" data-lanes="when" style="--i:1">
+        <span class="p-year">2017</span>
+        <span class="p-name">Deep Feature Flow<small>Zhu et al. · CVPR</small></span>
+        <span class="p-hyp">Тяжёлая сеть нужна только на ключевых кадрах, остальное переносится оптическим потоком</span>
+        <span class="p-tags"><span class="chip">когда считать</span></span>
+      </li>
+      <li class="paper" data-lanes="when" style="--i:2">
+        <span class="p-year">2019</span>
+        <span class="p-name">MARLIN<small>Apicharttrisorn et al. · SenSys</small></span>
+        <span class="p-hyp">Детектор звать, только когда сцена изменилась; между вызовами хватает трекера</span>
+        <span class="p-tags"><span class="chip">когда считать</span></span>
+      </li>
+      <li class="paper" data-lanes="when ru" style="--i:3">
+        <span class="p-year">2019</span>
+        <span class="p-name">Булатов<small>дисс. к.т.н. · ФИЦ ИУ РАН</small></span>
+        <span class="p-hyp">Обработку кадров стоит остановить, когда ожидаемая польза следующего кадра меньше его цены</span>
+        <span class="p-tags"><span class="chip">когда считать</span><span class="chip ru">RU</span></span>
+      </li>
+      <li class="paper" data-lanes="what" style="--i:4">
+        <span class="p-year">2020</span>
+        <span class="p-name">ApproxDet<small>Xu et al. · SenSys</small></span>
+        <span class="p-hyp">Конфигурацию детектора и трекера выбирать по содержимому кадра и нагрузке на устройство</span>
+        <span class="p-tags"><span class="chip">что запускать</span></span>
+      </li>
+      <li class="paper" data-lanes="trust" style="--i:5">
+        <span class="p-year">2021</span>
+        <span class="p-name">ACI<small>Gibbs, Candès · NeurIPS</small></span>
+        <span class="p-hyp">Порог можно подстраивать онлайн и держать долю ошибок на уровне α при любом сдвиге</span>
+        <span class="p-tags"><span class="chip">можно ли доверять</span></span>
+      </li>
+      <li class="paper" data-lanes="when ru" style="--i:6">
+        <span class="p-year">2022</span>
+        <span class="p-name">Мамедов, Купляков, Конушин<small>Программирование</small></span>
+        <span class="p-hyp">Детекций на 2–5 кадрах в секунду и трекера между ними хватает для видеоаналитики</span>
+        <span class="p-tags"><span class="chip">когда считать</span><span class="chip ru">RU</span></span>
+      </li>
+      <li class="paper" data-lanes="trust" style="--i:7">
+        <span class="p-year">2022</span>
+        <span class="p-name">TCD<small>Munir et al. · NeurIPS</small></span>
+        <span class="p-hyp">Уверенность детектора плохо откалибрована, особенно при сдвиге домена</span>
+        <span class="p-tags"><span class="chip">можно ли доверять</span></span>
+      </li>
+      <li class="paper" data-lanes="kf ru" style="--i:8">
+        <span class="p-year">2023</span>
+        <span class="p-name">Горбачев, Калугин<small>Компьютерная оптика</small></span>
+        <span class="p-hyp">Учёт уверенности детекции в фильтре Калмана делает многообъектный трекинг устойчивее</span>
+        <span class="p-tags"><span class="chip">фильтр Калмана</span><span class="chip ru">RU</span></span>
+      </li>
+      <li class="paper" data-lanes="when kf" style="--i:9">
+        <span class="p-year">2026</span>
+        <span class="p-name">Albireo<small>Taherin et al. · ACM/IEEE SEC</small></span>
+        <span class="p-hyp">Неопределённость фильтра Калмана подсказывает, когда звать детектор</span>
+        <span class="p-tags"><span class="chip base">главный бейзлайн</span></span>
+      </li>
+    </ol>
+    <p class="src papers-note">Фильтр сверху подсвечивает одну линию · полные ссылки в конце страницы</p>
+  </div>
+</section>
+
+<!-- ================= 04 T: ЧТО НЕ ОКЕЙ ================= -->
+<section class="sec stone" id="problemy" data-nav="T · Что не работает">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow"><span class="num">04</span><span class="star">T</span><span>Task · что у них не работает</span></p>
+      <h2 class="h2">Где бейзлайны ломаются</h2>
+    </div>
+    <div class="t-grid">
+      <figure class="card chart" id="ch-skip" data-anim>
+        <figcaption>
+          <p class="chart-title">Пропуск вслепую стоит дорого</p>
+          <p class="src">ΔAP@50 к покадровому инференсу, п.п. · YOLO26x · BDD100K MOT val · данные Albireo, §IV-C</p>
+        </figcaption>
+        <div class="plot"></div>
+        <table class="sr-only">
+          <caption>Изменение AP@50 относительно покадрового инференса, п.п.</caption>
+          <tr><th>Способ</th><th>ΔAP@50</th></tr>
+          <tr><td>Albireo, пропущено 19.3 % вызовов</td><td>+0.8</td></tr>
+          <tr><td>Каждый второй кадр</td><td>−8.6</td></tr>
+          <tr><td>Четыре кадра из пяти</td><td>−28.8</td></tr>
+        </table>
+      </figure>
+      <figure class="card chart" id="ch-sort" data-anim>
+        <figcaption>
+          <p class="chart-title">При редких детекциях всё решает трекер</p>
+          <p class="src">ошибка подсчёта людей ↓ · частота детекций фиксирована, камера неподвижна · Мамедов, Купляков, Конушин, 2022, табл. 1</p>
+        </figcaption>
+        <div class="legend"><span><i class="k m-b"></i>SORT</span><span><i class="k m-a"></i>трекер авторов [4]</span></div>
+        <div class="plot"></div>
+        <table class="sr-only">
+          <caption>Ошибка подсчёта при разной частоте детекций</caption>
+          <tr><th>Частота</th><th>SORT</th><th>Трекер авторов [4]</th></tr>
+          <tr><td>5 Гц</td><td>8.3</td><td>4.1</td></tr>
+          <tr><td>3 Гц</td><td>10.8</td><td>4.1</td></tr>
+          <tr><td>2 Гц</td><td>17.3</td><td>4.3</td></tr>
+        </table>
+      </figure>
+      <figure class="card anat" data-anim>
+        <figcaption class="anat-head">
+          <p class="chart-title">Albireo, лучший бейзлайн: четыре слабых места</p>
+          <p class="src">по разделам III и V-D статьи и табл. IV</p>
+        </figcaption>
+        <div class="anat-scroll">
+          <svg viewBox="0 0 720 290" role="img" aria-labelledby="anat-t">
+            <title id="anat-t">Схема Albireo: кадр, фильтр Калмана на каждый объект, проверка следа ковариации против порога; если да — прогноз рамок, если нет — запуск YOLO26x. Цифры в кружках — слабые места.</title>
+            <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="arr-head" d="M0 0 L10 5 L0 10 z"/></marker></defs>
+            <g class="an-node"><rect x="8" y="118" width="104" height="54" rx="8"/><text x="60" y="150" text-anchor="middle">кадр t</text></g>
+            <path class="an-edge" d="M112 145 H148" marker-end="url(#arr)"/>
+            <g class="an-node"><rect x="152" y="108" width="176" height="74" rx="8"/><text x="240" y="139" text-anchor="middle">фильтр Калмана</text><text class="an-sub" x="240" y="161" text-anchor="middle">на каждый объект</text></g>
+            <path class="an-edge" d="M328 145 H362" marker-end="url(#arr)"/>
+            <g class="an-node"><path d="M436 92 L506 145 L436 198 L366 145 Z"/><text x="436" y="141" text-anchor="middle">tr(P) &lt; τ ?</text><text class="an-sub" x="436" y="161" text-anchor="middle">один порог</text></g>
+            <path class="an-edge" d="M436 92 V56 H516" marker-end="url(#arr)"/>
+            <text class="an-lbl" x="446" y="78">да</text>
+            <path class="an-edge" d="M436 198 V234 H516" marker-end="url(#arr)"/>
+            <text class="an-lbl" x="446" y="222">нет</text>
+            <g class="an-node"><rect x="520" y="26" width="192" height="60" rx="8"/><text x="616" y="52" text-anchor="middle">прогноз рамок</text><text class="an-sub" x="616" y="72" text-anchor="middle">детектор спит</text></g>
+            <g class="an-node an-heavy"><rect x="520" y="204" width="192" height="60" rx="8"/><text x="616" y="230" text-anchor="middle">YOLO26x</text><text class="an-sub" x="616" y="250" text-anchor="middle">полный проход</text></g>
+            <g class="an-call pop" style="--i:0"><circle cx="500" cy="106" r="13"/><text x="500" y="111" text-anchor="middle">1</text></g>
+            <g class="an-call pop" style="--i:1"><circle cx="322" cy="104" r="13"/><text x="322" y="109" text-anchor="middle">2</text></g>
+            <g class="an-call pop" style="--i:2"><circle cx="706" cy="28" r="13"/><text x="706" y="33" text-anchor="middle">3</text></g>
+            <g class="an-call pop" style="--i:3"><circle cx="14" cy="116" r="13"/><text x="14" y="121" text-anchor="middle">4</text></g>
+          </svg>
+        </div>
+        <ol class="calls">
+          <li><i>1</i><span><b>Только два варианта:</b> прогноз или полный YOLO26x, середины нет</span></li>
+          <li><i>2</i><span><b>Шум Q фиксирован:</b> u растёт со временем, а не с движением объекта. Авторы сами называют это future work</span></li>
+          <li><i>3</i><span><b>Рамки прогноза неточны:</b> mAP@50:95 ниже покадрового на 3.7–4.8 п.п.</span></li>
+          <li><i>4</i><span><b>Один домен:</b> только дорожное видео, без разбивки день / ночь; классификатор пустой сцены настроен на BDD100K</span></li>
+        </ol>
+      </figure>
+    </div>
+    <div class="gap-strip">
+      <b>Общий пробел</b>
+      <p>Гейт «считать или нет» везде проверяют в среднем по датасету. Как он ведёт себя при сдвиге домена и можно ли гарантировать долю его ошибок, не изучено. При этом уверенность детекторов при сдвиге плохо откалибрована (TCD).</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 04 T: МЕТРИКИ И БЕНЧМАРКИ ================= -->
+<section class="sec" id="benchi" data-nav="T · Бенчмарки">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow"><span class="num">04</span><span class="star">T</span><span>Task · метрики и бенчмарки</span></p>
+      <h2 class="h2">Где будем соревноваться</h2>
+      <p class="lead">Три бенчмарка — три вида сдвига. Метрики бейзлайнов сохраняю для сравнимости и добавляю метрики надёжности гейта.</p>
+    </div>
+    <div class="benches">
+      <article class="bench">
+        <div class="b-media">
+          <svg viewBox="0 0 320 160" aria-hidden="true" class="b-anim">
+            <defs><clipPath id="bdd-cut"><polygon points="196,0 320,0 320,160 124,160"/></clipPath></defs>
+            <use href="#mbg-d" width="320" height="160"/>
+            <use href="#mcar-d" x="128" y="98" width="64" height="42"/>
+            <g clip-path="url(#bdd-cut)"><use href="#mbg-n" width="320" height="160"/><use href="#mcar-n" x="128" y="98" width="64" height="42"/></g>
+            <path class="lane-a" d="M155 80 L92 160"/>
+            <path class="lane-a" d="M165 80 L228 160" style="stroke:#c7d0da"/>
+            <path d="M196 0 L124 160" stroke="#ffffff" stroke-width="2"/>
+            <rect x="10" y="132" width="44" height="18" rx="9" fill="rgba(10,12,16,.7)"/><text x="32" y="145" text-anchor="middle" class="b-hud">ДЕНЬ</text>
+            <rect x="266" y="132" width="44" height="18" rx="9" fill="rgba(10,12,16,.7)"/><text x="288" y="145" text-anchor="middle" class="b-hud">НОЧЬ</text>
+          </svg>
+          <span class="b-tag">камера едет</span>
+        </div>
+        <h3>BDD100K MOT</h3>
+        <ul class="b-facts">
+          <li><span><b>2 000</b> видео по ~40 с с регистраторов</span></li>
+          <li><span>разметка <b>5</b> кадров/с</span></li>
+          <li><span>дневных и ночных видео <b>≈ поровну</b></span></li>
+        </ul>
+        <div class="b-role"><span class="chip base">прямое сравнение с Albireo</span></div>
+        <p class="src">Yu et al., CVPR 2020</p>
+      </article>
+      <article class="bench">
+        <div class="b-media">
+          <svg viewBox="0 0 320 160" aria-hidden="true" class="b-anim">
+            <use href="#mbg-d" width="320" height="160"/>
+            <use href="#mcar-d" x="128" y="98" width="64" height="42"/>
+            <g class="shift-n"><use href="#mbg-n" width="320" height="160"/><use href="#mcar-n" x="128" y="98" width="64" height="42"/></g>
+            <rect x="16" y="144" width="288" height="4" rx="2" fill="rgba(255,255,255,.45)"/>
+            <circle class="shift-dot" cx="16" cy="146" r="6" fill="#ff7759" stroke="#ffffff" stroke-width="2"/>
+            <text x="16" y="136" class="b-hud">ДЕНЬ</text><text x="160" y="136" text-anchor="middle" class="b-hud">НОЧЬ</text><text x="304" y="136" text-anchor="end" class="b-hud">ДЕНЬ</text>
+          </svg>
+          <span class="b-tag">сдвиг внутри клипа</span>
+        </div>
+        <h3>SHIFT</h3>
+        <ul class="b-facts">
+          <li><span>синтетика CARLA: <b>4 850</b> клипов × 500 кадров, 10 Гц</span></li>
+          <li><span><b>600</b> клипов с непрерывным сдвигом</span></li>
+          <li><span>день → ночь, дождь, туман, облачность</span></li>
+        </ul>
+        <div class="b-role"><span class="chip base">проверка порога с гарантией</span></div>
+        <p class="src">Sun et al., CVPR 2022</p>
+      </article>
+      <article class="bench">
+        <div class="b-media">
+          <svg viewBox="0 0 320 160" aria-hidden="true" class="b-anim">
+            <rect width="320" height="160" fill="#c3cbd2"/>
+            <rect y="28" width="320" height="104" fill="#7a828a"/>
+            <path d="M0 80 H320" stroke="#f3d35b" stroke-width="2.5"/>
+            <path d="M0 54 H320 M0 106 H320" stroke="#f6f8fa" stroke-width="2" stroke-dasharray="12 10"/>
+            <g>
+              <use href="#mcar-top" class="ua-car" x="-40" y="34" width="34" height="14" fill="#eef1f4"/>
+              <use href="#mcar-top" class="ua-car c2" x="-40" y="60" width="34" height="14" fill="#2c3a4a"/>
+              <use href="#mcar-top" class="ua-car c3" x="326" y="86" width="34" height="14" fill="#c9372a" transform="rotate(180 343 93)"/>
+              <use href="#mcar-top" class="ua-car c4" x="326" y="112" width="34" height="14" fill="#5c7a96" transform="rotate(180 343 119)"/>
+            </g>
+            <rect x="8" y="6" width="96" height="18" rx="9" fill="rgba(10,12,16,.7)"/>
+            <circle class="rec" cx="20" cy="15" r="4"/><text x="30" y="19" class="b-hud">REC · 25 К/С</text>
+          </svg>
+          <span class="b-tag" style="top:auto;bottom:10px">камера стоит</span>
+        </div>
+        <h3>UA-DETRAC</h3>
+        <ul class="b-facts">
+          <li><span><b>100</b> видео, 24 локации, 25 кадров/с</span></li>
+          <li><span><b>1.21 млн</b> размеченных рамок</span></li>
+          <li><span>облачно · <b>ночь</b> · солнечно · дождь</span></li>
+        </ul>
+        <div class="b-role"><span class="chip base">камеры трафика, умный город</span></div>
+        <p class="src">Wen et al., CVIU 2020</p>
+      </article>
+    </div>
+    <div class="metrics">
+      <div class="m-row"><span class="m-label">у бейзлайнов</span><div class="m-chips"><span class="chip">AP@50</span><span class="chip">mAP@50:95</span><span class="chip">доля пропущенных вызовов</span><span class="chip">задержка на кадр</span><span class="chip">энергия</span><span class="chip">мощность CPU</span></div></div>
+      <div class="m-row"><span class="m-label">добавляю</span><div class="m-chips"><span class="chip new">разрыв AP день ↔ ночь</span><span class="chip new">AURC гейта</span><span class="chip new">доля ошибок против α</span><span class="chip new">время восстановления</span><span class="chip new">GFLOPs на кадр по уровням P/L/H</span></div></div>
+      <div class="m-row"><span class="m-label">как меряю дома</span><div class="m-chips"><span class="chip base">всё на одной RTX 4090</span><span class="chip">GFLOPs и вызовы детектора — не зависят от железа</span><span class="chip">задержка и энергия — относительно Albireo на том же GPU</span><span class="chip">edge-бюджет — лимит мощности GPU</span></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 05 A: ИДЕИ ================= -->
+<section class="sec band" id="idei" data-nav="A · Идеи">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow"><span class="num">05</span><span class="star">A</span><span>Action · мои идеи</span></p>
+      <h2 class="h2">Три идеи — по одной на слабое место</h2>
+    </div>
+    <div class="ideas">
+
+      <article class="idea">
+        <div class="i-fig">
+          <svg id="router" viewBox="0 0 560 250" role="img" aria-labelledby="router-t">
+            <title id="router-t">Гейт направляет кадры на три уровня: P — прогноз фильтра Калмана, почти без вычислений; L — YOLO26n, 5.5 GFLOPs; H — YOLO26x, 194.4 GFLOPs. Полосы стоимости в масштабе.</title>
+            <path class="rt-lane" d="M18 128 H150"/>
+            <path class="rt-lane" d="M150 128 C196 128 204 52 252 52 H548"/>
+            <path class="rt-lane" d="M150 128 H548"/>
+            <path class="rt-lane" d="M150 128 C196 128 204 204 252 204 H548"/>
+            <g id="rt-tokens"></g>
+            <g class="rt-gate"><rect x="128" y="106" width="44" height="44" rx="6" transform="rotate(45 150 128)"/><text x="150" y="132" text-anchor="middle">гейт</text></g>
+            <text class="rt-in" x="18" y="114">кадр t</text>
+            <text class="rt-lab" x="268" y="40"><tspan class="kk">P</tspan>  прогноз Калмана · ≈ 0 GFLOPs, CPU</text>
+            <text class="rt-lab" x="268" y="116"><tspan class="kk">L</tspan>  YOLO26n · 5.5 GFLOPs</text>
+            <text class="rt-lab" x="268" y="192"><tspan class="kk">H</tspan>  YOLO26x · 194.4 GFLOPs</text>
+            <rect class="rt-cost p" x="268" y="62" width="2" height="8" rx="1"/>
+            <rect class="rt-cost l" x="268" y="138" width="7.6" height="8" rx="2"/>
+            <rect class="rt-cost h" x="268" y="214" width="270" height="8" rx="4"/>
+            <text class="rt-scale" x="538" y="242" text-anchor="end">полосы стоимости в масштабе · Ultralytics, COCO 640</text>
+          </svg>
+        </div>
+        <div class="i-txt">
+          <p class="i-num">Идея 1 · закрывает <em>1</em> и <em>3</em> · RQ2</p>
+          <h3 class="h3d">Третий уровень: P → L → H</h3>
+          <p>Между прогнозом трекера и полным YOLO26x встаёт YOLO26n. Лёгкая модель служит дешёвым измерением: сбрасывает дрейф трекера и возвращает рамкам точность.</p>
+          <p class="hyp">Гипотеза: та же AP@50 при не большем бюджете GFLOPs и выше mAP@50:95, чем у Albireo.</p>
+          <div class="i-checks"><span class="chip">BDD100K MOT</span><span class="chip">граница AP ↔ GFLOPs</span></div>
+          <p class="i-small">Уровни конфигураций были у ApproxDet. Новое — включение по неопределённости и проверка при сдвиге.</p>
+        </div>
+      </article>
+
+      <article class="idea">
+        <figure class="i-fig chart" id="ch-q" data-anim>
+          <div class="legend"><span><i class="k m-n"></i>Albireo: один Q на всех</span><span><i class="k m-b"></i>манёвренный объект, Q↑</span><span><i class="k m-a"></i>медленный объект, Q↓</span></div>
+          <div class="plot"></div>
+          <p class="illus">пунктир — порог вызова детектора τ · иллюстрация, не данные</p>
+        </figure>
+        <div class="i-txt">
+          <p class="i-num">Идея 2 · закрывает <em>2</em></p>
+          <h3 class="h3d">Шум процесса по инновациям</h3>
+          <p class="formula">NIS = νᵀ S⁻¹ ν ~ χ²₄</p>
+          <p>Если рамка стабильно расходится с прогнозом сильнее нормы, объект манёвренный: его Q растёт, и детектор просыпается раньше. Медленный объект можно дольше не будить.</p>
+          <p class="hyp">Гипотеза: выше AP@50 при той же доле пропусков, сильнее всего на быстрых объектах.</p>
+          <div class="i-checks"><span class="chip">абляция: фиксированный ↔ адаптивный Q</span><span class="chip">быстрые и медленные объекты</span></div>
+          <p class="i-small">Адаптация шумов по невязкам — классика обработки сигналов (Великанова, Ворошилин). У Albireo это названо future work.</p>
+        </div>
+      </article>
+
+      <article class="idea">
+        <figure class="i-fig chart" id="ch-aci" data-anim>
+          <div class="legend"><span><i class="k m-n"></i>фиксированный порог</span><span><i class="k m-b"></i>ACI</span></div>
+          <div class="plot"></div>
+          <p class="illus">пунктир — целевая доля ошибок α · иллюстрация, не данные</p>
+        </figure>
+        <div class="i-txt">
+          <p class="i-num">Идея 3 · закрывает <em>4</em> · RQ3</p>
+          <h3 class="h3d">Порог с гарантией: ACI</h3>
+          <p class="formula">αₜ₊₁ = αₜ + γ (α − errₜ)</p>
+          <p>errₜ берём на контрольных кадрах, где YOLO26x запускается всё равно: у Albireo это не реже раза в 30 кадров. Порог гейта подстраивается онлайн.</p>
+          <p class="hyp">Гипотеза: доля ошибок гейта держится около α и после смены дня на ночь.</p>
+          <div class="i-checks"><span class="chip">SHIFT · непрерывный сдвиг</span><span class="chip">доля ошибок против α</span><span class="chip">время восстановления</span></div>
+          <p class="i-small">Гарантия считается относительно тяжёлой модели, а не разметки. Насколько этот эталон смещён, проверю офлайн.</p>
+        </div>
+      </article>
+
+    </div>
+    <div class="newview">
+      <b>Новый взгляд на бенчмарк</b>
+      <p>Протокол «гейт при сдвиге»: каждая метрика отдельно по условиям, непрерывный сдвиг из SHIFT и время восстановления. Если успею — небольшой набор зимних клипов, которых нет в BDD100K и UA-DETRAC.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= R: ЧТО ЗНАЧИТ ПОБИТЬ ================= -->
+<section class="sec" id="pobeda" data-nav="R · Итог">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow"><span class="num">05</span><span class="star">R</span><span>Result · что значит «побить»</span></p>
+      <h2 class="h2">Сдвинуть границу «качество ↔ вычисления»</h2>
+    </div>
+    <div class="win">
+      <figure class="par" data-anim>
+        <svg viewBox="0 0 620 360" role="img" aria-labelledby="par-t">
+          <title id="par-t">Иллюстрация: Albireo чуть дешевле и чуть хуже полного YOLO26x. Область выше и левее Albireo означает победу.</title>
+          <defs><marker id="par-arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="arrow-head" d="M0 0 L10 5 L0 10 z"/></marker></defs>
+          <rect class="dom" x="72" y="28" width="378" height="88"/>
+          <path class="dom-edge" d="M450 28 V116 H72"/>
+          <text class="dom-tx" x="88" y="52">ОБЛАСТЬ «ПОБИТЬ»</text>
+          <path class="ax" d="M70 24 V306 H600"/>
+          <text class="ax-l" x="600" y="334" text-anchor="end">GFLOPs на кадр →</text>
+          <text class="ax-l" x="80" y="18">mAP@50:95 ↑</text>
+          <path class="front" d="M120 262 C 220 150, 380 100, 548 78"/>
+          <g class="pop" style="--i:0"><circle class="pt-n" cx="548" cy="78" r="7"/></g>
+          <text class="pt-tx" x="466" y="58">YOLO26x, каждый кадр</text>
+          <g class="pop" style="--i:1"><circle class="pt-n" cx="120" cy="262" r="7"/></g>
+          <text class="pt-tx" x="136" y="282">YOLO26n, каждый кадр</text>
+          <g class="pop" style="--i:2"><circle class="pt-a" cx="452" cy="116" r="8"/></g>
+          <text class="pt-tx" x="466" y="138">Albireo</text>
+          <text class="pt-sub" x="466" y="156">−19 % вызовов</text>
+          <path class="arrow pop" style="--i:3" d="M452 104 V62" marker-end="url(#par-arr)"/>
+          <path class="arrow pop" style="--i:4" d="M440 116 H372" marker-end="url(#par-arr)"/>
+          <text class="pt-sub" x="68" y="350">иллюстрация, не данные</text>
+        </svg>
+      </figure>
+      <div>
+        <ol class="crit">
+          <li><i>01</i><span>Выше mAP@50:95 при тех же GFLOPs на кадр</span></li>
+          <li><i>02</i><span>Меньше GFLOPs при той же AP@50</span></li>
+          <li><i>03</i><span>Меньше разрыв AP день ↔ ночь, а доля ошибок гейта держится около α</span></li>
+        </ol>
+        <p class="floor">Минимальный результат, даже если идеи не сработают: диагностика гейтов при сдвиге на трёх бенчмарках и открытый протокол оценки.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= ИСТОЧНИКИ ================= -->
+<section class="sec sources" id="istochniki" data-nav="Источники">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow"><span>Источники</span></p>
+      <h2 class="h3d">Работы, на которые опираются слайды</h2>
+    </div>
+    <ol class="src-list">
+      <li><span class="y">2026</span><span>Taherin A., Cano J., Ren B., Wang Y., Kaeli D. ALBIREO: Adaptive, Energy-Efficient Inference Framework for Video Object Detection on the Edge. ACM/IEEE SEC 2026</span><a href="https://arxiv.org/abs/2609.29648" target="_blank" rel="noopener">arXiv</a></li>
+      <li><span class="y">2023</span><span>Горбачев В.А., Калугин В.Ф. Разработка алгоритма многообъектного трекинга с необучаемыми признаками сопоставления объектов // Компьютерная оптика. 2023. Т. 47, № 6. С. 1002–1010</span><a href="https://computeroptics.ru/KO/PDF/KO47-6/470618.pdf" target="_blank" rel="noopener">PDF</a></li>
+      <li><span class="y">2022</span><span>Мамедов Т.З., Купляков Д.А., Конушин А.С. Видеоаналитика с применением детекции на разреженных кадрах // Программирование. 2022. № 3. С. 11–21</span><a href="https://sciencejournals.ru/issues/program/2022/vol_2022/iss_3/Program2203007Mamedov/Program2203007Mamedov.pdf" target="_blank" rel="noopener">PDF</a></li>
+      <li><span class="y">2022</span><span>Munir M.A., Khan M.H., Sarfraz M.S., Ali M. Towards Improving Calibration in Object Detection Under Domain Shift (TCD). NeurIPS 2022</span><a href="https://arxiv.org/abs/2209.07601" target="_blank" rel="noopener">arXiv</a></li>
+      <li><span class="y">2022</span><span>Sun T. et al. SHIFT: A Synthetic Driving Dataset for Continuous Multi-Task Domain Adaptation. CVPR 2022</span><a href="https://openaccess.thecvf.com/content/CVPR2022/html/Sun_SHIFT_A_Synthetic_Driving_Dataset_for_Continuous_Multi-Task_Domain_Adaptation_CVPR_2022_paper.html" target="_blank" rel="noopener">CVF</a></li>
+      <li><span class="y">2021</span><span>Gibbs I., Candès E. Adaptive Conformal Inference Under Distribution Shift (ACI). NeurIPS 2021</span><a href="https://arxiv.org/abs/2106.00170" target="_blank" rel="noopener">arXiv</a></li>
+      <li><span class="y">2020</span><span>Xu R. et al. ApproxDet: Content and Contention-Aware Approximate Object Detection for Mobiles. SenSys 2020</span><a href="https://arxiv.org/abs/2010.10754" target="_blank" rel="noopener">arXiv</a></li>
+      <li><span class="y">2020</span><span>Yu F. et al. BDD100K: A Diverse Driving Dataset for Heterogeneous Multitask Learning. CVPR 2020</span><a href="https://arxiv.org/abs/1805.04687" target="_blank" rel="noopener">arXiv</a></li>
+      <li><span class="y">2020</span><span>Wen L. et al. UA-DETRAC: A New Benchmark and Protocol for Multi-Object Detection and Tracking. CVIU 2020</span><a href="https://arxiv.org/abs/1511.04136" target="_blank" rel="noopener">arXiv</a></li>
+      <li><span class="y">2019</span><span>Булатов К.Б. Методы, модели и алгоритмы комбинирования и останова в системах распознавания в видеопотоке: дис. … канд. техн. наук. М.: ФИЦ ИУ РАН, 2019</span><a href="https://web.frccsc.ru/sites/default/files/docs/ds/002-073-04/diss/17-bulatov/ds04-17-bulatov_main.pdf" target="_blank" rel="noopener">PDF</a></li>
+      <li><span class="y">2019</span><span>Apicharttrisorn K. et al. Frugal Following: Power Thrifty Object Detection and Tracking for Mobile Augmented Reality (MARLIN). SenSys 2019</span><a href="https://vcg.ece.ucr.edu/media/1071/download" target="_blank" rel="noopener">PDF</a></li>
+      <li><span class="y">2017</span><span>Zhu X., Xiong Y., Dai J., Yuan L., Wei Y. Deep Feature Flow for Video Recognition. CVPR 2017</span><a href="https://openaccess.thecvf.com/content_cvpr_2017/html/Zhu_Deep_Feature_Flow_CVPR_2017_paper.html" target="_blank" rel="noopener">CVF</a></li>
+      <li><span class="y">2012</span><span>Великанова Е.П., Ворошилин Е.П. Адаптивная фильтрация координат маневрирующего объекта при изменениях условий передачи в радиолокационном канале // Доклады ТУСУРа. 2012. № 2 (26), ч. 1. С. 29–34</span><a href="https://journal.tusur.ru/storage/45840/029.pdf" target="_blank" rel="noopener">PDF</a></li>
+      <li><span class="y">2026</span><span>Ultralytics YOLO26: документация и таблица COCO (mAP, GFLOPs)</span><a href="https://docs.ultralytics.com/models/yolo26/" target="_blank" rel="noopener">docs</a></li>
+    </ol>
+  </div>
+</section>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <span>Андрей · магистерская диссертация · УрФУ</span>
+    <span>← → или PageUp / PageDown — между разделами</span>
+  </div>
+</footer>
+
+<script>
+(() => {
+  'use strict';
+  const doc = document, root = doc.documentElement;
+  const $ = (s, r = doc) => r.querySelector(s);
+  const $$ = (s, r = doc) => Array.from(r.querySelectorAll(s));
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const NS = 'http://www.w3.org/2000/svg';
+  const S = (tag, attrs, parent) => {
+    const e = doc.createElementNS(NS, tag);
+    if (attrs) for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  };
+  const T = (el, text) => { el.textContent = text; return el; };
+  const num = (v, d = 1) => (v < 0 ? '−' : '') + Math.abs(v).toFixed(d);
+
+  /* ---------- tooltip ---------- */
+  const tip = doc.createElement('div');
+  tip.className = 'tip'; tip.hidden = true; tip.setAttribute('aria-hidden', 'true');
+  doc.body.appendChild(tip);
+  function showTip(value, label, x, y) {
+    tip.replaceChildren(T(doc.createElement('strong'), value), T(doc.createElement('span'), label));
+    tip.hidden = false;
+    const r = tip.getBoundingClientRect();
+    let tx = x + 14, ty = y - r.height - 12;
+    if (tx + r.width > innerWidth - 8) tx = x - r.width - 14;
+    if (ty < 8) ty = y + 18;
+    tip.style.transform = `translate(${Math.round(tx)}px, ${Math.round(ty)}px)`;
+  }
+  const hideTip = () => { tip.hidden = true; };
+  function bindTip(el, value, label, hooks = {}) {
+    el.setAttribute('tabindex', '0');
+    el.setAttribute('aria-label', label + ': ' + value);
+    el.addEventListener('pointermove', e => { hooks.on && hooks.on(); showTip(value, label, e.clientX, e.clientY); });
+    el.addEventListener('pointerleave', () => { hooks.off && hooks.off(); hideTip(); });
+    el.addEventListener('focus', () => { hooks.on && hooks.on(); const r = el.getBoundingClientRect(); showTip(value, label, r.left + r.width / 2, r.top); });
+    el.addEventListener('blur', () => { hooks.off && hooks.off(); hideTip(); });
+  }
+  addEventListener('scroll', hideTip, { passive: true });
+
+  /* ---------- chart scaffolding ---------- */
+  function chart(id, render) {
+    const fig = doc.getElementById(id);
+    if (!fig) return;
+    const plot = $('.plot', fig);
+    let w = 0;
+    const draw = () => {
+      const nw = Math.round(plot.clientWidth);
+      if (!nw || Math.abs(nw - w) < 2) return;
+      w = nw;
+      plot.replaceChildren();
+      render(plot, nw);
+      $$('.line', plot).forEach(p => { try { p.style.setProperty('--len', Math.ceil(p.getTotalLength()) + 'px'); } catch (e) {} });
+    };
+    draw();
+    let raf = 0;
+    const schedule = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(draw); };
+    if ('ResizeObserver' in window) new ResizeObserver(schedule).observe(plot);
+    else addEventListener('resize', schedule);
+  }
+  const barPath = (x0, y, w, h, r) => {
+    r = Math.max(0, Math.min(r, w, h / 2));
+    return `M${x0},${y} H${x0 + w - r} Q${x0 + w},${y} ${x0 + w},${y + r} V${y + h - r} Q${x0 + w},${y + h} ${x0 + w - r},${y + h} H${x0} Z`;
+  };
+  const barPathNeg = (x0, y, w, h, r) => {
+    r = Math.max(0, Math.min(r, w, h / 2));
+    return `M${x0},${y} H${x0 - w + r} Q${x0 - w},${y} ${x0 - w},${y + r} V${y + h - r} Q${x0 - w},${y + h} ${x0 - w + r},${y + h} H${x0} Z`;
+  };
+
+  /* SHIFT: mAP by condition (real data, Table 2) */
+  chart('ch-shift', (plot, W) => {
+    const data = [['Переменная облачность', 47.4], ['Ясный день · обучение', 46.9], ['Дождь', 41.3], ['Пасмурно', 41.1], ['Рассвет и сумерки', 37.3], ['Туман', 21.0], ['Ночь', 15.4]];
+    const narrow = W < 560;
+    const labelW = narrow ? 132 : 200, padR = 46, top = 4, rowH = narrow ? 32 : 36, barH = 18, axisH = 26;
+    const H = top + data.length * rowH + axisH;
+    const x = v => labelW + v / 50 * (W - labelW - padR);
+    const svg = S('svg', { width: W, height: H, viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': 'mAP по условиям съёмки: ночь 15.4 против 46.9 на ясном дне' }, plot);
+    [0, 10, 20, 30, 40, 50].forEach(t => {
+      S('line', { x1: x(t), x2: x(t), y1: top, y2: H - axisH + 4, class: t === 0 ? 'zero' : 'grid' }, svg);
+      T(S('text', { x: x(t), y: H - 6, 'text-anchor': 'middle', class: 't-3 tick' }, svg), t);
+    });
+    data.forEach(([name, v], i) => {
+      const y = top + i * rowH + (rowH - barH) / 2;
+      const night = name === 'Ночь';
+      T(S('text', { x: labelW - 12, y: y + barH / 2 + 4.5, 'text-anchor': 'end', class: night ? 't-1 strong' : 't-2' }, svg), name);
+      const bar = S('path', { d: barPath(x(0), y, x(v) - x(0), barH, 4), class: 'bar ' + (night ? 'm-b' : 'm-n'), style: `--i:${i}` }, svg);
+      T(S('text', { x: x(v) + 8, y: y + barH / 2 + 4.5, class: night ? 't-1 strong' : 't-2' }, svg), v.toFixed(1));
+      const hit = S('rect', { x: 0, y: top + i * rowH, width: W, height: rowH, class: 'hit' }, svg);
+      bindTip(hit, v.toFixed(1) + ' mAP', name, { on: () => bar.classList.add('is-hot'), off: () => bar.classList.remove('is-hot') });
+    });
+  });
+
+  /* Albireo: ΔAP@50 vs per-frame (real data, §IV-C) */
+  chart('ch-skip', (plot, W) => {
+    const data = [
+      { name: 'Albireo · пропущено 19.3 % вызовов', v: 0.8 },
+      { name: 'Каждый 2-й кадр · FixedSkip-2', v: -8.6 },
+      { name: '4 кадра из 5 · FixedSkip-5', v: -28.8 }];
+    const padL = 52, padR = 46, top = 4, rowH = 58, barH = 18, axisH = 26;
+    const H = top + data.length * rowH + axisH;
+    const lo = -30, hi = 5;
+    const x = v => padL + (v - lo) / (hi - lo) * (W - padL - padR);
+    const svg = S('svg', { width: W, height: H, viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': 'Изменение AP@50: Albireo плюс 0.8, каждый второй кадр минус 8.6, четыре из пяти минус 28.8' }, plot);
+    [-30, -20, -10, 0].forEach(t => {
+      S('line', { x1: x(t), x2: x(t), y1: top, y2: H - axisH + 4, class: t === 0 ? 'zero' : 'grid' }, svg);
+      T(S('text', { x: x(t), y: H - 6, 'text-anchor': 'middle', class: 't-3 tick' }, svg), num(t, 0));
+    });
+    data.forEach((d, i) => {
+      const yL = top + i * rowH + 15, y = top + i * rowH + 24;
+      T(S('text', { x: padL, y: yL, class: 't-2 halo' }, svg), d.name);
+      const pos = d.v >= 0;
+      const w = Math.abs(x(d.v) - x(0));
+      const bar = S('path', { d: pos ? barPath(x(0), y, w, barH, 4) : barPathNeg(x(0), y, w, barH, 4), class: 'bar ' + (pos ? 'm-a' : 'm-b neg'), style: `--i:${i}` }, svg);
+      T(S('text', { x: pos ? x(d.v) + 8 : x(d.v) - 8, y: y + barH / 2 + 4.5, 'text-anchor': pos ? 'start' : 'end', class: 't-1 strong' }, svg), (pos ? '+' : '') + num(d.v));
+      const hit = S('rect', { x: 0, y: top + i * rowH, width: W, height: rowH, class: 'hit' }, svg);
+      bindTip(hit, (pos ? '+' : '') + num(d.v) + ' п.п. AP@50', d.name, { on: () => bar.classList.add('is-hot'), off: () => bar.classList.remove('is-hot') });
+    });
+  });
+
+  /* generic line chart */
+  function lineChart(plot, W, cfg) {
+    const H = cfg.height || 230;
+    const m = Object.assign({ l: 40, r: 24, t: 14, b: 30 }, cfg.margin || {});
+    const x = v => m.l + (v - cfg.x[0]) / (cfg.x[1] - cfg.x[0]) * (W - m.l - m.r);
+    const y = v => m.t + (1 - (v - cfg.y[0]) / (cfg.y[1] - cfg.y[0])) * (H - m.t - m.b);
+    const svg = S('svg', { width: W, height: H, viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': cfg.aria }, plot);
+    (cfg.zones || []).forEach(z => {
+      S('rect', { x: x(z.from), y: m.t, width: x(z.to) - x(z.from), height: H - m.t - m.b, class: z.cls }, svg);
+    });
+    (cfg.zoneLabels || []).forEach(z => T(S('text', { x: x(z.at), y: m.t + 14, 'text-anchor': 'middle', class: 't-2 tick' }, svg), z.label));
+    cfg.yTicks.forEach(t => {
+      S('line', { x1: m.l, x2: W - m.r, y1: y(t), y2: y(t), class: 'grid' }, svg);
+      T(S('text', { x: m.l - 8, y: y(t) + 4, 'text-anchor': 'end', class: 't-3 tick' }, svg), cfg.yFmt ? cfg.yFmt(t) : t);
+    });
+    (cfg.xTicks || []).forEach(t => T(S('text', { x: x(t.v), y: H - 8, 'text-anchor': t.anchor || 'middle', class: 't-3 tick' }, svg), t.label));
+    (cfg.refs || []).forEach(r => {
+      S('line', { x1: m.l, x2: W - m.r, y1: y(r.v), y2: y(r.v), class: 'ref' }, svg);
+      if (r.label) T(S('text', { x: W - m.r, y: y(r.v) - 6, 'text-anchor': 'end', class: 't-2 tick' }, svg), r.label);
+    });
+    cfg.series.forEach((s, si) => {
+      const d = s.pts.map((p, i) => (i ? 'L' : 'M') + x(p[0]).toFixed(1) + ',' + y(p[1]).toFixed(1)).join(' ');
+      S('path', { d, class: 'line ' + s.cls, style: `--i:${si}` }, svg);
+    });
+    (cfg.dots || []).forEach((p, i) => S('circle', { cx: x(p.x), cy: y(p.y), r: p.r || 4.5, class: 'dot ' + p.cls, style: `--i:${i}` }, svg));
+    (cfg.notes || []).forEach((n, i) => T(S('text', { x: x(n.x) + (n.dx || 0), y: y(n.y) + (n.dy || 0), 'text-anchor': n.anchor || 'start', class: (n.cls || 't-1') + ' pop', style: `--i:${i}` }, svg), n.text));
+    return { svg, x, y, H, m };
+  }
+
+  /* Mamedov et al.: counting error vs detection rate (real data, Table 1) */
+  chart('ch-sort', (plot, W) => {
+    const xs = ['5 Гц', '3 Гц', '2 Гц'];
+    const sort = [8.3, 10.8, 17.3], own = [4.1, 4.1, 4.3];
+    const g = lineChart(plot, W, {
+      height: 230, x: [-0.12, 2.12], y: [0, 20], yTicks: [0, 5, 10, 15, 20],
+      margin: { l: 34, r: 46, t: 12, b: 28 },
+      aria: 'Ошибка подсчёта: SORT 8.3, 10.8, 17.3; трекер авторов 4.1, 4.1, 4.3 при 5, 3 и 2 Гц',
+      xTicks: xs.map((l, i) => ({ v: i, label: l })),
+      series: [
+        { cls: 'm-b', pts: sort.map((v, i) => [i, v]) },
+        { cls: 'm-a', pts: own.map((v, i) => [i, v]) }],
+      dots: [
+        ...sort.map((v, i) => ({ x: i, y: v, cls: 'm-b' })),
+        ...own.map((v, i) => ({ x: i, y: v, cls: 'm-a' }))],
+      notes: [
+        { x: 2, y: 17.3, dx: 10, dy: 4, text: '17.3', cls: 't-1 strong' },
+        { x: 2, y: 4.3, dx: 10, dy: 4, text: '4.3', cls: 't-1 strong' },
+        { x: 0, y: 8.3, dx: 0, dy: -12, text: '8.3', anchor: 'middle', cls: 't-2' }]
+    });
+    const xh = S('line', { x1: 0, x2: 0, y1: g.m.t, y2: g.H - g.m.b, class: 'xhair' }, g.svg);
+    const colW = (W - g.m.l - g.m.r) / 3;
+    xs.forEach((lab, i) => {
+      const cx = g.x(i);
+      const hit = S('rect', { x: cx - colW / 2, y: g.m.t, width: colW, height: g.H - g.m.t - g.m.b, class: 'hit' }, g.svg);
+      bindTip(hit, `SORT ${sort[i].toFixed(1)} · трекер [4] ${own[i].toFixed(1)}`, 'ошибка подсчёта, ' + lab,
+        { on: () => { xh.setAttribute('x1', cx); xh.setAttribute('x2', cx); xh.classList.add('on'); }, off: () => xh.classList.remove('on') });
+    });
+  });
+
+  /* Idea 2: uncertainty growth per object (illustration) */
+  chart('ch-q', (plot, W) => {
+    const N = 30, tau = 0.5;
+    const mk = k => Array.from({ length: N + 1 }, (_, t) => [t, Math.min(1, k * t)]).filter(p => p[1] <= 0.96);
+    const kf = 0.034, ks = 0.072, kl = 0.02;
+    lineChart(plot, W, {
+      height: 230, x: [0, N], y: [0, 1], yTicks: [0, 0.5, 1], yFmt: t => (t === 0.5 ? 'τ' : t.toFixed(0)),
+      margin: { l: 30, r: 16, t: 12, b: 28 },
+      aria: 'Иллюстрация: неопределённость манёвренного объекта растёт быстрее и пересекает порог раньше, медленного — позже',
+      xTicks: [{ v: 0, label: '0', anchor: 'start' }, { v: N, label: 'кадров с последней детекции →', anchor: 'end' }],
+      refs: [{ v: tau, label: '' }],
+      series: [{ cls: 'm-n', pts: mk(kf) }, { cls: 'm-b', pts: mk(ks) }, { cls: 'm-a', pts: mk(kl) }],
+      dots: [{ x: tau / ks, y: tau, cls: 'm-b' }, { x: tau / kf, y: tau, cls: 'm-n' }, { x: tau / kl, y: tau, cls: 'm-a' }],
+      notes: [
+        { x: tau / ks, y: tau, dx: -6, dy: -14, text: 'будим раньше', anchor: 'end', cls: 't-1' },
+        { x: tau / kl, y: tau, dx: 0, dy: 22, text: 'спит дольше', anchor: 'middle', cls: 't-1' }]
+    });
+  });
+
+  /* Idea 3: gate error rate, fixed threshold vs ACI (illustration) */
+  chart('ch-aci', (plot, W) => {
+    const N = 200, cut = 100, alpha = 0.1;
+    const n1 = t => 0.011 * Math.sin(t * 0.83) + 0.007 * Math.sin(t * 2.17 + 1) + 0.004 * Math.sin(t * 5.3 + 2);
+    const n2 = t => 0.009 * Math.sin(t * 0.71 + 0.5) + 0.006 * Math.sin(t * 1.93 + 2) + 0.004 * Math.sin(t * 4.7);
+    const fixed = [], aci = [];
+    for (let t = 0; t <= N; t += 2) {
+      fixed.push([t, (t < cut ? 0.08 : 0.08 + 0.19 * (1 - Math.exp(-(t - cut) / 4))) + n1(t)]);
+      aci.push([t, (t < cut ? alpha : alpha + 0.15 * Math.exp(-(t - cut) / 13) * (1 - Math.exp(-(t - cut) / 2))) + n2(t)]);
+    }
+    const g = lineChart(plot, W, {
+      height: 230, x: [0, N], y: [0, 0.35], yTicks: [0, 0.1, 0.2, 0.3], yFmt: t => (t === 0.1 ? 'α' : t.toFixed(1)),
+      margin: { l: 30, r: 16, t: 12, b: 28 },
+      aria: 'Иллюстрация: после смены дня на ночь доля ошибок с фиксированным порогом растёт, а ACI возвращает её к уровню α',
+      zones: [{ from: cut, to: N, cls: 'zone' }],
+      zoneLabels: [{ at: cut / 2, label: 'день' }, { at: (cut + N) / 2, label: 'ночь' }],
+      xTicks: [{ v: N, label: 'кадры →', anchor: 'end' }],
+      refs: [{ v: alpha, label: '' }],
+      series: [{ cls: 'm-n', pts: fixed }, { cls: 'm-b', pts: aci }]
+    });
+    const y0 = g.y(0.03), xa = g.x(cut), xb = g.x(150);
+    const br = S('g', { class: 'pop', style: '--i:1' }, g.svg);
+    S('path', { d: `M${xa} ${y0 - 5} V${y0} H${xb} V${y0 - 5}`, fill: 'none', class: 'ref', style: 'stroke-dasharray:none' }, br);
+    T(S('text', { x: (xa + xb) / 2, y: y0 + 14, 'text-anchor': 'middle', class: 't-2 tick' }, br), 'восстановление');
+  });
+
+  /* ---------- build-in observer: arms only off-screen blocks, plays when seen ---------- */
+  function countUp(el) {
+    const target = parseFloat(el.dataset.count), dec = +(el.dataset.dec || 0);
+    const t0 = performance.now(), dur = 1100;
+    const tick = now => {
+      const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+      el.textContent = (target * e).toFixed(dec);
+      if (k < 1) requestAnimationFrame(tick); else el.textContent = target.toFixed(dec);
+    };
+    requestAnimationFrame(tick);
+  }
+  if (!reduce && 'IntersectionObserver' in window) {
+    const io = new IntersectionObserver(entries => {
+      for (const en of entries) {
+        const el = en.target;
+        if (!en.isIntersecting) { el.classList.remove('play'); el.classList.add('armed'); continue; }
+        const enough = en.intersectionRatio >= 0.3 || en.intersectionRect.height >= innerHeight * 0.35;
+        if (enough && el.classList.contains('armed')) {
+          el.classList.remove('armed'); void el.getBoundingClientRect(); el.classList.add('play');
+          $$('[data-count]', el).forEach(countUp);
+        }
+      }
+    }, { threshold: [0, 0.1, 0.2, 0.3, 0.45] });
+    $$('[data-anim]').forEach(el => io.observe(el));
+  }
+
+  /* ---------- papers filter ---------- */
+  const papers = $('#papers');
+  $$('.fchip').forEach(b => b.addEventListener('click', () => {
+    papers.dataset.filter = b.dataset.f;
+    $$('.fchip').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  }));
+
+  /* ---------- progress, side nav, keyboard ---------- */
+  const bar = $('.progress i');
+  const onScroll = () => { const max = root.scrollHeight - innerHeight; bar.style.transform = `scaleX(${max > 0 ? Math.min(1, scrollY / max) : 0})`; };
+  addEventListener('scroll', onScroll, { passive: true }); onScroll();
+  const secs = $$('.sec');
+  const nav = doc.createElement('nav');
+  nav.className = 'dots'; nav.setAttribute('aria-label', 'Разделы');
+  secs.forEach(s => {
+    const a = doc.createElement('a');
+    a.href = '#' + s.id; a.dataset.for = s.id; a.setAttribute('aria-label', s.dataset.nav);
+    a.append(T(doc.createElement('span'), s.dataset.nav));
+    nav.append(a);
+  });
+  doc.body.append(nav);
+  const setActive = s => {
+    $$('a', nav).forEach(a => a.classList.toggle('on', a.dataset.for === s.id));
+    nav.classList.toggle('on-band', s.classList.contains('band'));
+  };
+  if ('IntersectionObserver' in window) {
+    const nio = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) setActive(e.target); }), { rootMargin: '-48% 0px -48% 0px' });
+    secs.forEach(s => nio.observe(s));
+  }
+  setActive(secs[0]);
+  addEventListener('keydown', e => {
+    if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
+    let dir = 0;
+    if (e.key === 'ArrowRight' || e.key === 'PageDown') dir = 1;
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') dir = -1;
+    else return;
+    const tEl = e.target;
+    if (tEl && tEl.closest && tEl.closest('input, textarea, select, [contenteditable]')) return;
+    const yy = scrollY + 6;
+    let cur = 0;
+    secs.forEach((s, i) => { if (s.offsetTop <= yy) cur = i; });
+    let target;
+    if (dir > 0) target = secs[Math.min(secs.length - 1, cur + 1)];
+    else target = scrollY > secs[cur].offsetTop + 12 ? secs[cur] : secs[Math.max(0, cur - 1)];
+    e.preventDefault();
+    target.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+  });
+
+  /* ---------- pause looping media off-screen ---------- */
+  const loopers = [$('#scene'), ...$$('.b-media')].filter(Boolean);
+  if ('IntersectionObserver' in window) {
+    const pio = new IntersectionObserver(es => es.forEach(e => e.target.classList.toggle('paused', !e.isIntersecting)), { threshold: 0 });
+    loopers.forEach(el => pio.observe(el));
+  }
+
+  /* ---------- hero: gate simulation (illustration) ---------- */
+  (function hero() {
+    const scene = $('#scene');
+    if (!scene) return;
+    const carA = $('#carA', scene), carB = $('#carB', scene), boxA = $('#boxA', scene), boxB = $('#boxB', scene);
+    const tagT = $('#tagA-t', scene), miss = $('#miss', scene), hudF = $('#hud-frame', scene), hudP = $('#hud-phase', scene);
+    const cPhase = $('#c-phase'), cU = $('#c-u'), cFill = $('#c-fill'), cLog = $('#c-log'), cPill = $('#c-pill'), cWhat = $('#c-what');
+    const N = 32, NIGHT = 15, Q = 0.11, TL = 0.5, TH = 0.8, BASE = 412;
+    const EVENTS = { 0: 'старт', 9: 'новый объект', 28: 'контрольный' };
+    const frames = [];
+    let u = 0.05, xPred = 0;
+    for (let i = 0; i < N; i++) {
+      let x = Math.round(5 * Math.sin(i * 0.8));
+      if (i >= 19) x = Math.min(140, 40 * (i - 18)) + Math.round(3 * Math.sin(i));
+      const uPre = i === 0 ? 0.05 : Math.round((u + Q) * 100) / 100;
+      let d = 'P', why = 'прогноз трекера';
+      if (EVENTS[i]) { d = 'H'; why = 'YOLO26x · ' + EVENTS[i]; }
+      else if (uPre >= TH) { d = 'H'; why = 'YOLO26x'; }
+      else if (uPre >= TL) { d = 'L'; why = 'YOLO26n'; }
+      if (d === 'L') { u = 0.12; xPred = x; } else if (d === 'H') { u = 0.05; xPred = x; } else { u = uPre; }
+      frames.push({ i, night: i >= NIGHT, x, xPred, u: uPre, d, why, miss: Math.abs(x - xPred) >= 60, carB: i >= 9 });
+    }
+    const tagText = d => (d === 'P' ? 'P · прогноз' : d === 'L' ? 'L · YOLO26n' : 'H · YOLO26x');
+    const fno = i => String(BASE + i).padStart(4, '0');
+    const logLine = f => {
+      const li = doc.createElement('li');
+      const dd = T(doc.createElement('span'), f.d); dd.className = 'd'; dd.dataset.d = f.d;
+      const why = T(doc.createElement('span'), f.miss ? 'прогноз · рамка мимо' : f.why); why.className = 'why' + (f.miss ? ' x' : '');
+      li.append(T(doc.createElement('span'), fno(f.i)), T(doc.createElement('span'), 'u ' + f.u.toFixed(2)), dd, why);
+      return li;
+    };
+    function render(f) {
+      scene.classList.toggle('night', f.night);
+      carA.style.transform = `translate(${405 + f.x}px, 262px)`;
+      boxA.style.transform = `translate(${f.xPred}px, 0px)`;
+      boxA.setAttribute('data-d', f.d);
+      boxA.classList.toggle('is-miss', f.miss);
+      tagT.textContent = tagText(f.d);
+      miss.classList.toggle('on', f.miss);
+      carB.classList.toggle('on', f.carB);
+      boxB.classList.toggle('on', f.carB);
+      hudF.textContent = 'КАДР ' + fno(f.i);
+      hudP.textContent = f.night ? 'НОЧЬ' : 'ДЕНЬ';
+      cPhase.textContent = f.night ? 'ночь' : 'день';
+      cPhase.classList.toggle('is-night', f.night);
+      cU.textContent = f.u.toFixed(2);
+      cFill.style.width = Math.min(100, f.u * 100) + '%';
+      cPill.setAttribute('data-d', f.d);
+      cPill.textContent = f.d;
+      cWhat.textContent = f.miss ? 'прогноз · гейт уверен' : f.why;
+    }
+    function prime(k) {
+      scene.classList.add('no-tr');
+      render(frames[k]);
+      cLog.replaceChildren();
+      for (let j = Math.max(0, k - 4); j <= k; j++) cLog.append(logLine(frames[j]));
+      requestAnimationFrame(() => requestAnimationFrame(() => scene.classList.remove('no-tr')));
+    }
+    if (reduce) { prime(21); return; }
+    let k = 4, timer = null, visible = true;
+    prime(k);
+    const dur = f => (f.miss ? 1500 : f.d !== 'P' ? 950 : 680);
+    function step() {
+      k = (k + 1) % N;
+      const f = frames[k];
+      render(f);
+      cLog.append(logLine(f));
+      while (cLog.children.length > 5) cLog.firstElementChild.remove();
+      timer = setTimeout(step, dur(f));
+    }
+    const start = () => { if (!timer && visible && !doc.hidden) timer = setTimeout(step, 700); };
+    const stop = () => { clearTimeout(timer); timer = null; };
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(es => es.forEach(e => { visible = e.isIntersecting; visible ? start() : stop(); }), { threshold: 0.15 }).observe(scene);
+    }
+    doc.addEventListener('visibilitychange', () => (doc.hidden ? stop() : start()));
+    start();
+  })();
+
+  /* ---------- idea 1: tokens through the gate (illustration) ---------- */
+  (function router() {
+    const svg = $('#router');
+    if (!svg || reduce) return;
+    const layer = $('#rt-tokens', svg);
+    const PATHS = {
+      P: 'M18 128 H150 C196 128 204 52 252 52 H548',
+      L: 'M18 128 H548',
+      H: 'M18 128 H150 C196 128 204 204 252 204 H548'
+    };
+    const seq = 'PPPLPPPPHPPLPPPPLPPH';
+    let k = 0, timer = null;
+    function spawn() {
+      const d = seq[k++ % seq.length];
+      const g = S('g', { class: 'tok tok-' + d }, layer);
+      S('rect', { x: -7, y: -5, width: 14, height: 10, rx: 3 }, g);
+      const am = S('animateMotion', { dur: '2.6s', fill: 'freeze', begin: 'indefinite', path: PATHS[d], calcMode: 'paced' }, g);
+      try { am.beginElement(); } catch (e) { g.remove(); return; }
+      setTimeout(() => g.remove(), 2700);
+    }
+    const run = () => { if (!timer) { spawn(); timer = setInterval(spawn, 620); } };
+    const halt = () => { clearInterval(timer); timer = null; };
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(es => es.forEach(e => (e.isIntersecting && !doc.hidden ? run() : halt())), { threshold: 0.2 }).observe(svg);
+    } else run();
+    doc.addEventListener('visibilitychange', () => { if (doc.hidden) halt(); });
+  })();
+})();
+</script>
+
+</body>
+</html>
+
